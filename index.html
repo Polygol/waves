@@ -427,13 +427,19 @@
             transform: scale(0.98) !important;
             transition: none !important;
         }
+        
+        @media (max-width: 500px) {
+            .tab-container {
+                justify-content: flex-start;
+            }
+
+            .tab-btn {
+                font-size: 0;
+                padding-left: 30px;
+            }
+        }
 
         @media (max-width: 480px) {
-            .tab-container {
-                height: 130px;
-                align-content: flex-end;
-            }
-            
             .ttt-board {
                 max-width: 300px;
             }
