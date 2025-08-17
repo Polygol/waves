@@ -593,12 +593,12 @@
             };
             
             const displaySearchResults = (results, onResultClick) => {
-                const drawerContent = document.getElementById('drawer-content');
+                let contentHtml;
                 if (results.length === 0) {
-                    drawerContent.innerHTML = '<p style="text-align: center; color: var(--secondary-text-color);">No results found.</p>';
+                    contentHtml = '<p style="text-align: center; color: var(--secondary-text-color);">No results found.</p>';
                 } else {
                     const getResultParts = (displayName) => ({ title: displayName.split(', ')[0], subtitle: displayName.split(', ').slice(1).join(', ') });
-                    drawerContent.innerHTML = results.map(result => `
+                    contentHtml = results.map(result => `
                         <div class="menu-item clickable" data-lat="${result.lat}" data-lon="${result.lon}" data-name="${result.display_name.split(',')[0]}">
                             <span class="material-symbols-rounded">location_on</span>
                             <div class="menu-item-info">
@@ -607,7 +607,7 @@
                             </div>
                         </div>`).join('');
                 }
-                openDrawer('Search Results', '', drawerContent.innerHTML, onResultClick);
+                openDrawer('Search Results', '', contentHtml, onResultClick);
             };
 
             // --- Explore View Logic ---
@@ -617,7 +617,10 @@
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(async () => {
                     const query = searchInput.value.trim();
-                    if (query.length < 3) return;
+                    if (query.length < 3) {
+                        closeDrawer();
+                        return;
+                    }
                     const results = await performSearch(query);
                     displaySearchResults(results, (item) => {
                         const lat = parseFloat(item.dataset.lat);
@@ -625,7 +628,7 @@
                         if (searchMarker) searchMarker.remove();
                         searchMarker = new maplibregl.Marker({ color: '#ff6b6b' }).setLngLat([lon, lat]).addTo(map);
                         map.flyTo({ center: [lon, lat], zoom: 15, speed: 1.5 });
-                        closeDrawer();
+                        closeDrawer(); // Auto-close on selection
                     });
                 }, 500);
             });
@@ -650,7 +653,7 @@
                             else endCoords = [lon, lat];
                             
                             if (startCoords && endCoords) getRoute();
-                            closeDrawer();
+                            closeDrawer(); // Auto-close on selection
                         });
                     }, 500);
                 });
@@ -677,7 +680,7 @@
             });
 
             async function getRoute() {
-                if (OPENROUTESERVICE_API_KEY === 'YOUR_API_KEY_HERE') {
+                if (OPENROUTESERVICE_API_KEY === 'YOUR_API_KEY_HERE' || !OPENROUTESERVICE_API_KEY) {
                     return Gurasuraisu.showPopup('API key is missing for directions.');
                 }
                 const travelMode = document.querySelector('.travel-mode-btn.active').dataset.mode;
@@ -727,6 +730,7 @@
             // --- Drawer Management ---
             const drawer = document.getElementById('drawer');
             const drawerOverlay = document.getElementById('drawer-overlay');
+            const drawerHeader = document.querySelector('.drawer-header');
             let isDrawerOpen = false;
 
             function openDrawer(title, subtitle, contentHtml, onItemClick) {
@@ -765,7 +769,9 @@
                  closeDrawer();
             }
 
+            // --- UPDATED: Event listeners to close the drawer ---
             drawerOverlay.addEventListener('click', closeDrawer);
+            drawerHeader.addEventListener('click', closeDrawer);
         });
     </script>
 </body>
