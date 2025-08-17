@@ -3,113 +3,232 @@
 <head>
     <link rel="icon" href="favicon.png" type="image/png">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Waves</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&amp;display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded">
-    <script src="/assets/gurapp/api/gurasuraisu-api.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Maps</title>
+    <script src="/assets/gurapp/api/gurasuraisu-api.js"></script>
+
+    <!-- MapLibre GL JS for Map Display -->
+    <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,700,1,0">
+
     <style>
         :root {
-            /* Dark Theme (Default) Variables */
+            /* Using the same color variables from the reference for consistency */
             --background-color-dark: #1c1c1c;
             --text-color-dark: #f9f9f9;
             --secondary-text-color-dark: rgba(255, 255, 255, 0.7);
-            --modal-background-dark: rgba(51, 51, 51, 0.8);
-            --modal-transparent-dark: rgba(51, 51, 51, 0.7);
             --search-background-dark: rgba(51, 51, 51, 0.5);
-            --dark-overlay: rgba(51, 51, 51, 0.2);
-            --dark-transparent: rgba(255, 255, 255, 0.1); 
             --glass-border-dark: rgba(100, 100, 100, 0.2);
-            
-            /* Light Theme Variables */
-            --background-color-light: #f0f0f0;
-            --text-color-light: #333333;
-            --secondary-text-color-light: rgba(0, 0, 0, 0.7);
-            --modal-background-light: rgba(220, 220, 220, 0.8);
-            --modal-transparent-light: rgba(240, 240, 240, 0.7);
-            --search-background-light: rgba(220, 220, 220, 0.5);
-            --light-overlay: rgba(220, 220, 220, 0.2);
-            --light-transparent: rgba(255, 255, 255, 0.1);
-            --glass-border-light: rgba(200, 200, 200, 0.2);
-            
+
             /* Default to Dark Theme */
             --background-color: var(--background-color-dark);
             --text-color: var(--text-color-dark);
             --secondary-text-color: var(--secondary-text-color-dark);
-            --modal-background: var(--modal-background-dark);
-            --modal-transparent: var(--modal-transparent-dark);
             --search-background: var(--search-background-dark);
-            --overlay-color: var(--dark-overlay);
-            --transparent-color: var(--dark-transparent);
             --glass-border: var(--glass-border-dark);
         }
-        
+
         body.light-theme {
+            --background-color-light: #f0f0f0;
+            --text-color-light: #333333;
+            --secondary-text-color-light: rgba(0, 0, 0, 0.7);
+            --search-background-light: rgba(220, 220, 220, 0.5);
+            --glass-border-light: rgba(200, 200, 200, 0.2);
+
             --background-color: var(--background-color-light);
             --text-color: var(--text-color-light);
             --secondary-text-color: var(--secondary-text-color-light);
-            --modal-background: var(--modal-background-light);
-            --modal-transparent: var(--modal-transparent-light);
             --search-background: var(--search-background-light);
-            --overlay-color: var(--light-overlay);
-            --transparent-color: var(--light-transparent);
             --glass-border: var(--glass-border-light);
         }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--background-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+
+        * {
             margin: 0;
-            color: var(--text-color);
-            user-select: none;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .container {
+        body {
+            background-color: var(--background-color);
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .content {
-            background-color: var(--modal-background);
-            padding: 30px;
-            border-radius: 50px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        h1 {
-            font-size: 40px;
-            margin: 10px 0;
-            color: #e74c3c;
-        }
-
-        p {
-            font-size: 20px;
-            margin: 10px 0;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
             color: var(--text-color);
         }
 
-        .material-symbols-rounded {
-            font-size: 50px;
-            color: #e74c3c;
-            margin-bottom: 20px;
+        /* --- Map Container --- */
+        #map-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        /* Hide MapLibre attribution until we add our own */
+        .maplibregl-ctrl-bottom-right, .maplibregl-ctrl-bottom-left {
+            display: none;
+        }
+
+        /* --- UI Overlay --- */
+        .ui-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows map interaction */
+        }
+        .ui-container > * {
+            pointer-events: auto; /* Re-enable pointer events for UI elements */
+        }
+
+        /* --- Top Toolbar --- */
+        .toolbar {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .tab-btn {
+            background-color: var(--search-background);
+            color: transparent;
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 10px 9px 10px 18px;
+            font-size: 0;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(.3,1.2,.64,1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(5px) saturate(2);
+        }
+
+        .tab-btn.active {
+            background-color: var(--secondary-text-color);
+            color: var(--background-color);
+            border-radius: 15px;
+            padding: 10px 18px 10px 16px;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .toolbar .tab-btn .material-symbols-rounded {
+            color: var(--text-color);
+            font-size: 20px;
+            transition: color 0.3s;
+        }
+        .toolbar .tab-btn.active .material-symbols-rounded {
+            color: var(--background-color) !important;
+        }
+
+        /* --- Attribution --- */
+        .attribution-footer {
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            z-index: 1000;
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .attribution-footer a {
+            color: #bde0ff;
+            text-decoration: none;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="content">
-            <span class="material-symbols-rounded">hide_source</span>
-            <h1>Waves is coming soon</h1>
-            <p>The Waves app is unreleased. It will release on the 15th of August, 2025.</p>
+<body data-app-name="Maps">
+
+    <!-- The div where the map will be rendered -->
+    <div id="map-container"></div>
+
+    <!-- UI elements will go inside this container -->
+    <div class="ui-container">
+        <div class="toolbar">
+            <button class="tab-btn active" id="explore-btn">
+                <span class="material-symbols-rounded">map</span>
+                Explore
+            </button>
+            <button class="tab-btn" id="directions-btn">
+                <span class="material-symbols-rounded">directions</span>
+                Directions
+            </button>
+            <button class="tab-btn" id="game-btn">
+                <span class="material-symbols-rounded">public</span>
+                Game
+            </button>
+        </div>
+
+        <!-- This footer provides the required attribution for OpenFreeMap -->
+        <div class="attribution-footer">
+            <a href="https://openfreemap.org/">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- 1. Initialize the Map ---
+            const map = new maplibregl.Map({
+                container: 'map-container', // ID of the map container div
+                // Using the "Liberty" style from OpenFreeMap
+                style: 'https://tiles.openfreemap.org/styles/liberty',
+                center: [13.388, 52.517], // Initial center [lng, lat] (Berlin)
+                zoom: 9.5, // Initial zoom level
+            });
+
+            // Add navigation controls (zoom in/out)
+            map.addControl(new maplibregl.NavigationControl({
+                showCompass: false
+            }), 'top-right');
+            
+            // --- 2. UI Interaction ---
+            const exploreBtn = document.getElementById('explore-btn');
+            const directionsBtn = document.getElementById('directions-btn');
+            const gameBtn = document.getElementById('game-btn');
+
+            // Simple function to manage active button state
+            function setActiveButton(activeBtn) {
+                [exploreBtn, directionsBtn, gameBtn].forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                activeBtn.classList.add('active');
+            }
+
+            // Event Listeners for top buttons
+            exploreBtn.addEventListener('click', () => {
+                setActiveButton(exploreBtn);
+                // In future phases, this will show the search bar
+                Gurasuraisu.showPopup('Explore Mode Activated');
+            });
+
+            directionsBtn.addEventListener('click', () => {
+                setActiveButton(directionsBtn);
+                // In future phases, this will show the directions input fields
+                Gurasuraisu.showPopup('Directions Mode Activated');
+            });
+
+            gameBtn.addEventListener('click', () => {
+                setActiveButton(gameBtn);
+                // In future phases, this will launch the GeoGuessr game
+                Gurasuraisu.showPopup('Game Mode Activated');
+            });
+        });
+    </script>
 </body>
 </html>
