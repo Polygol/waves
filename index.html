@@ -400,7 +400,7 @@
         }
         .panel-container {
             position: fixed;
-            top: 80px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
             width: 95%;
@@ -410,11 +410,11 @@
             flex-direction: column;
             gap: 8px;
             padding: 12px;
-            border-radius: 20px;
+            border-radius: 25px;
             border: 1px solid var(--glass-border);
             background: var(--search-background);
             backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.2);
         }
         .directions-input-group {
             position: relative;
@@ -524,7 +524,6 @@
             <div class="drawer-header"><h2 id="drawer-title"></h2><p id="drawer-subtitle"></p></div>
             <div class="drawer-content" id="drawer-content"></div>
         </div>
-        <div id="drawer-overlay" class="modal-overlay"></div>
     </div>
 
     <script>
