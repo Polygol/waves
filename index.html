@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,700,1,0">
 
     <style>
-        /* --- COPIED DIRECTLY FROM index(92).html --- */
+        /* CSS IS NOW A 100% EXACT COPY FROM index(92).html */
         :root {
             --edge-refraction-filter: url('#edge-refraction-only');
             --background-color-dark: #1c1c1c;
@@ -73,7 +73,7 @@
             user-select: none;
             position: relative;
             overflow: hidden;
-            transition: background-color 0.3s, color 0.3s;
+            transition: background-color 0.3s, color 0.3s, background-image 0.5s;
             color: var(--text-color);
         }
         .toolbar {
@@ -95,6 +95,9 @@
             flex-wrap: wrap;
             height: 80px;
         }
+        .toolbar.hidden { top: -100px; opacity: 0; }
+        .toolbar.hidden .album-art { margin-top: 0px !IMPORTANT; }
+        .toolbar::before { content: ""; position: absolute; inset: 0; z-index: -1; }
         .toolbar::after {
             content: "";
             position: absolute;
@@ -136,38 +139,68 @@
             color: var(--text-color);
             font-size: 20px;
         }
-        .toolbar .tab-btn.active .material-symbols-rounded {
-            color: var(--background-color) !important;
+        .toolbar .tab-btn.active .material-symbols-rounded { color: var(--background-color) !important; }
+        .view-container {
+            flex-grow: 1;
+            width: 100%;
+            padding: 80px 20px 0 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
         }
-        .search-container {
-            position: fixed;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 95%;
-            max-width: 500px;
-            z-index: 999;
-        }
+        .view-container::-webkit-scrollbar { width: 8px; }
+        .view-container::-webkit-scrollbar-track { background: transparent; }
+        .view-container::-webkit-scrollbar-thumb { background-color: var(--search-background); border-radius: 50px; }
+        .item-card-title { font-weight: 500; font-family: 'Open Runde'; }
+        .item-card-subtitle { font-size: 14px; color: var(--secondary-text-color); }
+        .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 20px; }
         .library-search-input {
             width: 100%;
-            padding: 14px 20px 14px 50px;
-            border-radius: 20px;
+            padding: 10px 15px 10px 40px;
+            border-radius: 25px;
             border: 1px solid var(--glass-border);
             background: var(--search-background);
             color: var(--text-color);
             backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
-            font-size: 1rem;
+            font-size: 14px;
             outline: none;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
         .search-icon {
             font-size: 22px;
             position: absolute;
-            left: 18px;
+            left: 15px;
             top: 50%;
             transform: translateY(-50%);
             color: var(--secondary-text-color);
             pointer-events: none;
+        }
+        .filter-container { display: flex; gap: 10px; }
+        .filter-btn, .filter-btn-sc {
+            padding: 8px 16px;
+            height: 42px;
+            border-radius: 10px;
+        }
+        .filter-btn.active, .filter-btn-sc.active {
+            background: var(--secondary-text-color);
+            color: var(--background-color);
+            border-radius: 25px !important;
+            font-family: 'Open Runde';
+            font-weight: 500;
+        }
+        .action-btn {
+            background-color: var(--search-background);
+            color: var(--text-color);
+            border: none;
+            border-radius: 50px;
+            padding: 8px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            height: 42px;
+            backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            border: 1px solid var(--glass-border);
         }
         .modal-overlay {
             position: fixed;
@@ -181,28 +214,104 @@
             pointer-events: none;
             transition: opacity 0.3s ease;
         }
-        .modal-overlay.visible {
-            opacity: 1;
-            pointer-events: auto;
+        .modal-overlay.visible { opacity: 1; pointer-events: auto; }
+        .music-title {
+            font-size: 1.3rem;
+            word-wrap: break-word;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+            font-family: 'Open Runde';
         }
-        /* For all clickable elements */
-        [onclick], button, a, .clickable {
-          cursor: pointer;
-          transform: scale(1);
-          transition: all 0.15s cubic-bezier(0.2, 0, 0.38, 0.9);
+        .search-input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            background: var(--search-background);
+            color: var(--text-color);
+            backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            flex-grow: 1;
         }
-        [onclick]:active, button:active, a:active, .clickable:active {
-          transform: scale(0.96);
-          transition: all 0.1s cubic-bezier(0.2, 0, 0.38, 0.9);
-          filter: brightness(1.5);
+        .search-input:focus { border-color: var(--modal-background); }
+        .search-input::placeholder { color: var(--secondary-text-color); }
+        .search-icon {
+            font-size: 20px;
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--secondary-text-color);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .filter-btn, .filter-btn-sc {
+            flex: 1;
+            padding: 8px 10px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            background: var(--search-background);
+            color: var(--secondary-text-color);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+        }
+        .filter-btn.active, .filter-btn-sc.active {
+            background: var(--secondary-text-color);
+            color: var(--background-color);
         }
         .material-symbols-rounded {
           font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24;
           vertical-align: middle;
         }
+        [onclick], button, a, input[type="button"], input[type="submit"], .clickable {
+          cursor: pointer;
+          transform: scale(1);
+          transition: all 0.15s cubic-bezier(0.2, 0, 0.38, 0.9);
+        }
+        [onclick]:active, button:active, a:active, input[type="button"]:active, input[type="submit"]:active, .clickable:active {
+          transform: scale(0.96);
+          transition: all 0.1s cubic-bezier(0.2, 0, 0.38, 0.9);
+          filter: brightness(1.5);
+        }
+        .context-menu {
+            position: absolute;
+            background-color: var(--search-background);
+            border-radius: 25px;
+            padding: 8px;
+            backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            border: 1px solid var(--glass-border);
+            z-index: 10001;
+            width: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(10px) scale(0.95) scaleY(0.9);
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            transform-origin: top;
+            margin: 10px;
+        }
+        .context-menu.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .menu-item .material-symbols-rounded { font-size: 20px; }
+        .menu-separator { height: 1px; background-color: var(--glass-border); margin: 8px 0; }
         .drawer {
             position: fixed;
-            bottom: -100%;
+            bottom: -100%; /* Initially hidden */
             left: 0;
             width: 100%;
             background-color: var(--search-background);
@@ -218,9 +327,7 @@
             transition: all 0.3s cubic-bezier(.3,1.2,.64,1);
             max-height: calc(100% - 80px);
         }
-        .drawer.open {
-            bottom: 0;
-        }
+        .drawer.open { bottom: 0; }
         .drawer-handle {
             width: 50px;
             height: 5px;
@@ -241,62 +348,14 @@
         .drawer-content::-webkit-scrollbar { width: 4px; }
         .drawer-content::-webkit-scrollbar-track { background: transparent; }
         .drawer-content::-webkit-scrollbar-thumb { background: var(--modal-transparent); border-radius: 4px; }
-        .drawer-header {
-            padding: 40px 20px 10px 20px;
-            text-align: center;
-        }
+        .drawer-header { padding: 40px 20px 10px 20px; text-align: center; }
         #drawer-title { font-size: 1.5rem; }
-        .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 12px 15px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        .menu-item .material-symbols-rounded {
-            font-size: 22px;
-            color: var(--secondary-text-color);
-        }
-        .menu-item-info {
-            display: flex;
-            flex-direction: column;
-        }
-        .menu-item-title {
-            font-weight: 500;
-        }
-        .menu-item-subtitle {
-            font-size: 0.9em;
-            color: var(--secondary-text-color);
-        }
-        .menu-separator {
-            height: 1px;
-            background-color: var(--glass-border);
-            margin: 8px 15px;
-        }
-        @media (min-width: 600px) {
-            .drawer {
-                left: 5vw !important;
-                width: 90vw !important;
-                border: 1px solid var(--glass-border);
-            }
-        }
-        @media (min-width: 800px) {
-            .drawer {
-                left: 15vw !important;
-                width: 70vw !important;
-                border: 1px solid var(--glass-border);
-            }
-        }
-        @media (min-width: 1000px) {
-            .drawer {
-                left: 25vw !important;
-                width: 50vw !important;
-                border: 1px solid var(--glass-border);
-            }
-        }
-        /* --- MAP SPECIFIC STYLES --- */
+        #drawer-subtitle { color: var(--secondary-text-color); }
+        @media (min-width: 600px) { .drawer { left: 5vw !important; width: 90vw !important; border: 1px solid var(--glass-border); } }
+        @media (min-width: 800px) { .drawer { left: 15vw !important; width: 70vw !important; border: 1px solid var(--glass-border); } }
+        @media (min-width: 1000px) { .drawer { left: 25vw !important; width: 50vw !important; border: 1px solid var(--glass-border); } }
+        
+        /* --- MAP-SPECIFIC OVERRIDES & ADDITIONS --- */
         #map-container {
             position: absolute;
             top: 0;
@@ -305,11 +364,13 @@
             height: 100%;
             z-index: 1;
         }
+        /* Hide default attribution, we will add our own */
         .maplibregl-ctrl-bottom-right, .maplibregl-ctrl-bottom-left {
-            display: none; /* Hide default attribution */
+            display: none;
         }
+        /* Position nav controls below top UI */
         .maplibregl-ctrl-top-right {
-             margin-top: 140px; /* Position nav controls below search bar */
+             margin-top: 150px;
         }
         .attribution-footer {
             position: fixed;
@@ -326,6 +387,80 @@
         .attribution-footer a {
             color: #bde0ff;
             text-decoration: none;
+        }
+        .ui-overlay {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows map interaction by default */
+        }
+        .ui-overlay > * {
+            pointer-events: auto; /* Re-enable pointer events for UI elements */
+        }
+        .panel-container {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 95%;
+            max-width: 500px;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            background: var(--search-background);
+            backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .directions-input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .directions-input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+            background: var(--dark-transparent); /* Use a slightly different bg */
+            color: var(--text-color);
+            font-size: 14px;
+            outline: none;
+        }
+        .directions-input-group .material-symbols-rounded {
+            position: absolute;
+            left: 12px;
+            color: var(--secondary-text-color);
+        }
+        .location-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+        }
+        .travel-mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .travel-mode-btn {
+            background-color: var(--dark-transparent);
+            border: 1px solid var(--glass-border);
+            color: var(--text-color);
+            border-radius: 25px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .travel-mode-btn.active {
+            background-color: var(--secondary-text-color);
+            color: var(--background-color);
         }
     </style>
 </head>
@@ -347,188 +482,292 @@
         </filter>
     </svg>
 
-    <!-- The div where the map will be rendered -->
     <div id="map-container"></div>
 
-    <!-- UI elements are overlaid on top of the map -->
-    <div class="toolbar">
-        <button class="tab-btn active" id="explore-btn">
-            <span class="material-symbols-rounded">map</span>
-            Explore
-        </button>
-        <button class="tab-btn" id="directions-btn">
-            <span class="material-symbols-rounded">directions</span>
-            Directions
-        </button>
-        <button class="tab-btn" id="game-btn">
-            <span class="material-symbols-rounded">public</span>
-            Game
-        </button>
-    </div>
-
-    <div class="search-container" id="search-box">
-        <span class="material-symbols-rounded search-icon">search</span>
-        <input type="text" id="search-input" placeholder="Search for a place or address" class="library-search-input">
-    </div>
-
-    <div class="attribution-footer">
-        <a href="https://openfreemap.org/" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>
-    </div>
-
-    <!-- Slide-up Drawer for results, hidden initially -->
-    <div id="drawer" class="drawer">
-        <div class="drawer-handle"></div>
-        <div class="drawer-header">
-            <h2 id="drawer-title">Search Results</h2>
+    <div class="ui-overlay">
+        <div class="toolbar">
+            <button class="tab-btn active" id="explore-btn"><span class="material-symbols-rounded">map</span>Explore</button>
+            <button class="tab-btn" id="directions-btn"><span class="material-symbols-rounded">directions</span>Directions</button>
+            <button class="tab-btn" id="game-btn"><span class="material-symbols-rounded">public</span>Game</button>
         </div>
-        <div class="drawer-content" id="drawer-content">
-            <!-- Search results will be injected here by JavaScript -->
+
+        <div class="panel-container" id="explore-panel">
+            <div class="search-container" style="position: relative; top: 0; left: 0; transform: none; width: 100%; max-width: none;">
+                <span class="material-symbols-rounded search-icon">search</span>
+                <input type="text" id="search-input" placeholder="Search for a place or address" class="library-search-input" style="padding: 14px 20px 14px 50px;">
+            </div>
         </div>
+
+        <div class="panel-container" id="directions-panel" style="display: none;">
+            <div class="directions-input-group">
+                <span class="material-symbols-rounded">trip_origin</span>
+                <input type="text" id="start-input" class="directions-input" placeholder="Starting point">
+                <button id="get-location-btn" class="location-btn"><span class="material-symbols-rounded">my_location</span></button>
+            </div>
+            <div class="directions-input-group">
+                <span class="material-symbols-rounded">location_on</span>
+                <input type="text" id="end-input" class="directions-input" placeholder="Choose destination">
+            </div>
+            <div class="travel-mode-selector">
+                <button class="travel-mode-btn active" data-mode="driving-car"><span class="material-symbols-rounded">directions_car</span>Drive</button>
+                <button class="travel-mode-btn" data-mode="foot-walking"><span class="material-symbols-rounded">directions_walk</span>Walk</button>
+                <button class="travel-mode-btn" data-mode="cycling-road"><span class="material-symbols-rounded">directions_bike</span>Cycle</button>
+            </div>
+        </div>
+
+        <div class="attribution-footer">
+            <a href="https://openfreemap.org/" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>
+        </div>
+
+        <div id="drawer" class="drawer">
+            <div class="drawer-handle"></div>
+            <div class="drawer-header"><h2 id="drawer-title"></h2><p id="drawer-subtitle"></p></div>
+            <div class="drawer-content" id="drawer-content"></div>
+        </div>
+        <div id="drawer-overlay" class="modal-overlay"></div>
     </div>
-    <div id="drawer-overlay" class="modal-overlay"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            let map; // Define map in the outer scope
-            let searchMarker; // To keep track of the current search marker
+            // --- IMPORTANT: ADD YOUR API KEY HERE ---
+            const OPENROUTESERVICE_API_KEY = 'YOUR_API_KEY_HERE'; 
+            // ---
 
-            // --- 1. Initialize the Map ---
+            let map;
+            let searchMarker, startMarker, endMarker;
+            let startCoords, endCoords;
+
             map = new maplibregl.Map({
                 container: 'map-container',
                 style: 'https://tiles.openfreemap.org/styles/liberty',
-                center: [2.3522, 48.8566], // Paris
+                center: [2.3522, 48.8566],
                 zoom: 11,
             });
 
-            map.addControl(new maplibregl.NavigationControl({
-                showCompass: false
-            }), 'top-right');
+            map.on('load', () => {
+                // Add a source and layer for drawing the route
+                map.addSource('route', { type: 'geojson', data: null });
+                map.addLayer({
+                    id: 'route-layer',
+                    type: 'line',
+                    source: 'route',
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: { 'line-color': '#45b7d1', 'line-width': 6, 'line-opacity': 0.8 }
+                });
+            });
+
+            map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
             
-            // --- 2. UI & View Management ---
             const exploreBtn = document.getElementById('explore-btn');
             const directionsBtn = document.getElementById('directions-btn');
             const gameBtn = document.getElementById('game-btn');
-            const searchBox = document.getElementById('search-box');
+            const explorePanel = document.getElementById('explore-panel');
+            const directionsPanel = document.getElementById('directions-panel');
 
             function setActiveButton(activeBtn) {
                 [exploreBtn, directionsBtn, gameBtn].forEach(btn => btn.classList.remove('active'));
                 activeBtn.classList.add('active');
-                // Show/hide search box based on view
-                searchBox.style.display = (activeBtn === exploreBtn) ? 'block' : 'none';
+                
+                explorePanel.style.display = 'none';
+                directionsPanel.style.display = 'none';
+
+                if (activeBtn === exploreBtn) explorePanel.style.display = 'flex';
+                if (activeBtn === directionsBtn) directionsPanel.style.display = 'flex';
+                clearMap();
             }
 
             exploreBtn.addEventListener('click', () => setActiveButton(exploreBtn));
             directionsBtn.addEventListener('click', () => setActiveButton(directionsBtn));
-            gameBtn.addEventListener('click', () => setActiveButton(gameBtn));
-
-            // --- 3. Search Functionality ---
-            const searchInput = document.getElementById('search-input');
-            let searchTimeout;
-
-            searchInput.addEventListener('input', () => {
-                clearTimeout(searchTimeout);
-                // Debounce the search to avoid spamming the API
-                searchTimeout = setTimeout(performSearch, 500);
+            gameBtn.addEventListener('click', () => {
+                setActiveButton(gameBtn);
+                Gurasuraisu.showPopup('Game mode is coming soon!');
             });
-
-            async function performSearch() {
-                const query = searchInput.value.trim();
-                if (query.length < 3) {
-                    closeDrawer();
-                    return;
-                }
-
+            
+            // --- Generic Search Function ---
+            const performSearch = async (query) => {
                 const endpoint = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10`;
-                
                 try {
-                    const response = await fetch(endpoint, {
-                        headers: { 'User-Agent': 'GurasuraisuMaps/1.0' }
-                    });
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    const results = await response.json();
-                    displaySearchResults(results);
+                    const response = await fetch(endpoint, { headers: { 'User-Agent': 'GurasuraisuMaps/1.0' } });
+                    if (!response.ok) throw new Error('Network error');
+                    return await response.json();
                 } catch (error) {
                     console.error('Search failed:', error);
                     Gurasuraisu.showPopup('Could not perform search.');
+                    return [];
                 }
-            }
-
-            function displaySearchResults(results) {
+            };
+            
+            const displaySearchResults = (results, onResultClick) => {
                 const drawerContent = document.getElementById('drawer-content');
                 if (results.length === 0) {
                     drawerContent.innerHTML = '<p style="text-align: center; color: var(--secondary-text-color);">No results found.</p>';
-                    openDrawer();
-                    return;
+                } else {
+                    const getResultParts = (displayName) => ({ title: displayName.split(', ')[0], subtitle: displayName.split(', ').slice(1).join(', ') });
+                    drawerContent.innerHTML = results.map(result => `
+                        <div class="menu-item clickable" data-lat="${result.lat}" data-lon="${result.lon}" data-name="${result.display_name.split(',')[0]}">
+                            <span class="material-symbols-rounded">location_on</span>
+                            <div class="menu-item-info">
+                                <div class="menu-item-title">${getResultParts(result.display_name).title}</div>
+                                <div class="menu-item-subtitle">${getResultParts(result.display_name).subtitle}</div>
+                            </div>
+                        </div>`).join('');
                 }
+                openDrawer('Search Results', '', drawerContent.innerHTML, onResultClick);
+            };
 
-                // Split name and context for better display
-                const getResultParts = (displayName) => {
-                    const parts = displayName.split(', ');
-                    return {
-                        title: parts[0],
-                        subtitle: parts.slice(1).join(', ')
-                    };
-                };
+            // --- Explore View Logic ---
+            const searchInput = document.getElementById('search-input');
+            let searchTimeout;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(async () => {
+                    const query = searchInput.value.trim();
+                    if (query.length < 3) return;
+                    const results = await performSearch(query);
+                    displaySearchResults(results, (item) => {
+                        const lat = parseFloat(item.dataset.lat);
+                        const lon = parseFloat(item.dataset.lon);
+                        if (searchMarker) searchMarker.remove();
+                        searchMarker = new maplibregl.Marker({ color: '#ff6b6b' }).setLngLat([lon, lat]).addTo(map);
+                        map.flyTo({ center: [lon, lat], zoom: 15, speed: 1.5 });
+                        closeDrawer();
+                    });
+                }, 500);
+            });
+            
+            // --- Directions View Logic ---
+            const startInput = document.getElementById('start-input');
+            const endInput = document.getElementById('end-input');
+            
+            [startInput, endInput].forEach(input => {
+                input.addEventListener('input', () => {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(async () => {
+                        const query = input.value.trim();
+                        if (query.length < 3) return;
+                        const results = await performSearch(query);
+                        displaySearchResults(results, (item) => {
+                            const lat = parseFloat(item.dataset.lat);
+                            const lon = parseFloat(item.dataset.lon);
+                            const name = item.dataset.name;
+                            input.value = name;
+                            if(input.id === 'start-input') startCoords = [lon, lat];
+                            else endCoords = [lon, lat];
+                            
+                            if (startCoords && endCoords) getRoute();
+                            closeDrawer();
+                        });
+                    }, 500);
+                });
+            });
 
-                drawerContent.innerHTML = results.map(result => `
-                    <div class="menu-item clickable" data-lat="${result.lat}" data-lon="${result.lon}">
-                        <span class="material-symbols-rounded">location_on</span>
+            document.getElementById('get-location-btn').addEventListener('click', () => {
+                if (!navigator.geolocation) return Gurasuraisu.showPopup('Geolocation is not supported.');
+                navigator.geolocation.getCurrentPosition(pos => {
+                    startCoords = [pos.coords.longitude, pos.coords.latitude];
+                    startInput.value = 'My Current Location';
+                    if (startMarker) startMarker.remove();
+                    startMarker = new maplibregl.Marker({ color: '#4ecdc4' }).setLngLat(startCoords).addTo(map);
+                    map.flyTo({ center: startCoords, zoom: 15 });
+                    if(endCoords) getRoute();
+                }, () => Gurasuraisu.showPopup('Unable to retrieve your location.'));
+            });
+
+            document.querySelectorAll('.travel-mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelector('.travel-mode-btn.active').classList.remove('active');
+                    btn.classList.add('active');
+                    if (startCoords && endCoords) getRoute();
+                });
+            });
+
+            async function getRoute() {
+                if (OPENROUTESERVICE_API_KEY === 'YOUR_API_KEY_HERE') {
+                    return Gurasuraisu.showPopup('API key is missing for directions.');
+                }
+                const travelMode = document.querySelector('.travel-mode-btn.active').dataset.mode;
+                const url = `https://api.openrouteservice.org/v2/directions/${travelMode}?api_key=${OPENROUTESERVICE_API_KEY}&start=${startCoords.join(',')}&end=${endCoords.join(',')}`;
+
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error.message);
+
+                    const routeGeoJSON = data.features[0];
+                    map.getSource('route').setData(routeGeoJSON);
+                    
+                    if (startMarker) startMarker.remove();
+                    startMarker = new maplibregl.Marker({ color: '#4ecdc4' }).setLngLat(startCoords).addTo(map);
+                    if (endMarker) endMarker.remove();
+                    endMarker = new maplibregl.Marker({ color: '#ff6b6b' }).setLngLat(endCoords).addTo(map);
+
+                    const bounds = new maplibregl.LngLatBounds(startCoords, endCoords);
+                    routeGeoJSON.geometry.coordinates.forEach(coord => bounds.extend(coord));
+                    map.fitBounds(bounds, { padding: 80, duration: 1000 });
+
+                    displayRouteSteps(data.features[0].properties.segments[0].steps, data.features[0].properties.summary);
+                } catch (error) {
+                    Gurasuraisu.showPopup(`Could not get route: ${error.message}`);
+                    console.error("Routing error:", error);
+                }
+            }
+            
+            function displayRouteSteps(steps, summary) {
+                const duration = Math.round(summary.duration / 60);
+                const distance = (summary.distance / 1000).toFixed(1);
+
+                const stepsHtml = steps.map(step => `
+                    <div class="menu-item">
+                        <span class="material-symbols-rounded">turn_right</span> <!-- Icon needs to be dynamic later -->
                         <div class="menu-item-info">
-                            <div class="menu-item-title">${getResultParts(result.display_name).title}</div>
-                            <div class="menu-item-subtitle">${getResultParts(result.display_name).subtitle}</div>
+                            <div class="menu-item-title">${step.instruction}</div>
+                            <div class="menu-item-subtitle">${step.distance.toFixed(0)} meters</div>
                         </div>
                     </div>
                 `).join('');
                 
-                openDrawer();
-                addResultClickListeners();
-            }
-            
-            function addResultClickListeners() {
-                document.querySelectorAll('.drawer-content .menu-item').forEach(item => {
-                    item.addEventListener('click', () => {
-                        const lat = parseFloat(item.dataset.lat);
-                        const lon = parseFloat(item.dataset.lon);
-
-                        // Remove previous marker if it exists
-                        if (searchMarker) {
-                            searchMarker.remove();
-                        }
-
-                        // Add new marker
-                        searchMarker = new maplibregl.Marker({ color: '#ff6b6b' })
-                            .setLngLat([lon, lat])
-                            .addTo(map);
-
-                        // Fly to the location
-                        map.flyTo({
-                            center: [lon, lat],
-                            zoom: 15,
-                            speed: 1.5
-                        });
-
-                        closeDrawer();
-                    });
-                });
+                openDrawer(`Route (${duration} min)`, `${distance} km`, stepsHtml);
             }
 
-            // --- 4. Drawer Management (from music app) ---
+            // --- Drawer Management ---
             const drawer = document.getElementById('drawer');
             const drawerOverlay = document.getElementById('drawer-overlay');
             let isDrawerOpen = false;
 
-            function openDrawer() {
-                if(isDrawerOpen) return;
-                drawer.classList.add('open');
-                drawerOverlay.classList.add('visible');
-                isDrawerOpen = true;
+            function openDrawer(title, subtitle, contentHtml, onItemClick) {
+                document.getElementById('drawer-title').textContent = title;
+                document.getElementById('drawer-subtitle').textContent = subtitle;
+                const drawerContent = document.getElementById('drawer-content');
+                drawerContent.innerHTML = contentHtml;
+                
+                if (onItemClick) {
+                    drawerContent.querySelectorAll('.clickable').forEach(item => {
+                        item.addEventListener('click', () => onItemClick(item));
+                    });
+                }
+
+                if (!isDrawerOpen) {
+                    drawer.classList.add('open');
+                    drawerOverlay.classList.add('visible');
+                    isDrawerOpen = true;
+                }
             }
 
             function closeDrawer() {
-                if(!isDrawerOpen) return;
+                if (!isDrawerOpen) return;
                 drawer.classList.remove('open');
                 drawerOverlay.classList.remove('visible');
                 isDrawerOpen = false;
+            }
+            
+            function clearMap() {
+                 if(searchMarker) searchMarker.remove();
+                 if(startMarker) startMarker.remove();
+                 if(endMarker) endMarker.remove();
+                 if(map.getSource('route')) map.getSource('route').setData({type: 'FeatureCollection', features: []});
+                 startCoords = null; endCoords = null;
+                 startInput.value = ''; endInput.value = '';
+                 closeDrawer();
             }
 
             drawerOverlay.addEventListener('click', closeDrawer);
