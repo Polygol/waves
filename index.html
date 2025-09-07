@@ -15,6 +15,7 @@
     <style>
         :root {
             --edge-refraction-filter: url('#edge-refraction-only');
+            --sun-shadow: 0 0 0 0 transparent;
             --background-color-dark: #1c1c1c;
             --text-color-dark: #f9f9f9;
             --secondary-text-color-dark: rgba(255, 255, 255, 0.7);
@@ -119,6 +120,7 @@
             align-items: center;
             gap: 8px;
             backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            box-shadow: var(--sun-shadow);
             border: 1px solid var(--glass-border);
         }
         .tab-btn.active {
@@ -158,6 +160,7 @@
             background: var(--search-background);
             color: var(--text-color);
             backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            box-shadow: var(--sun-shadow);
             font-size: 14px;
             outline: none;
         }
@@ -196,6 +199,7 @@
             gap: 8px;
             height: 42px;
             backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            box-shadow: var(--sun-shadow);
             border: 1px solid var(--glass-border);
         }
         .modal-overlay {
@@ -229,6 +233,7 @@
             background: var(--search-background);
             color: var(--text-color);
             backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            box-shadow: var(--sun-shadow);
             font-size: 14px;
             outline: none;
             transition: border-color 0.2s;
@@ -257,6 +262,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            box-shadow: var(--sun-shadow);
         }
         .filter-btn.active, .filter-btn-sc.active {
             background: var(--secondary-text-color);
@@ -285,7 +291,7 @@
             border: 1px solid var(--glass-border);
             z-index: 10001;
             width: auto;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            box-shadow: var(--sun-shadow), 0 4px 20px rgba(0,0,0,0.2);
             opacity: 0;
             transform: translateY(10px) scale(0.95) scaleY(0.9);
             pointer-events: none;
@@ -316,6 +322,7 @@
             touch-action: none;
             user-select: none;
             backdrop-filter: blur(10px) saturate(2) var(--edge-refraction-filter);
+            box-shadow: var(--sun-shadow);
             border-top: 1px solid var(--glass-border);
             border-radius: 25px 25px 0 0;
             transform-origin: bottom;
@@ -410,7 +417,7 @@
             border: 1px solid var(--glass-border);
             background: var(--search-background);
             backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.2);
+            box-shadow: var(--sun-shadow), 0 0 50px rgba(0, 0, 0, 0.2);
         }
         .directions-input-group {
             position: relative;
@@ -509,7 +516,7 @@
         <div class="panel-container" id="explore-panel">
             <div class="search-container" style="position: relative; top: 0; left: 0; transform: none; width: 100%; max-width: none;">
                 <span class="material-symbols-rounded search-icon">search</span>
-                <input type="text" id="search-input" placeholder="Search for a place or address" class="library-search-input" style="background-color: transparent; backdrop-filter: none; border: none;">
+                <input type="text" id="search-input" placeholder="Search for a place or address" class="library-search-input" style="background-color: transparent; backdrop-filter: none; border: none; box-shadow: none;">
             </div>
         </div>
 
