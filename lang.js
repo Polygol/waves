@@ -1,4 +1,4 @@
-const LANG_EN_MAPS = {
+const LANG_EN_WAVES = {
     TITLE: "Waves",
     EXPLORE: "Explore",
     DIRECTIONS: "Directions",
@@ -20,7 +20,7 @@ const LANG_EN_MAPS = {
     NO_RESULTS_FOUND: "No results found."
 };
 
-const LANG_JP_MAPS = {
+const LANG_JP_WAVES = {
     TITLE: "Waves",
     EXPLORE: "探索",
     DIRECTIONS: "経路",
@@ -42,7 +42,7 @@ const LANG_JP_MAPS = {
     NO_RESULTS_FOUND: "結果が見つかりません。"
 };
 
-const LANG_DE_MAPS = {
+const LANG_DE_WAVES = {
     TITLE: "Waves",
     EXPLORE: "Erkunden",
     DIRECTIONS: "Route",
@@ -64,7 +64,7 @@ const LANG_DE_MAPS = {
     NO_RESULTS_FOUND: "Keine Ergebnisse gefunden."
 };
 
-const LANG_ES_MAPS = {
+const LANG_ES_WAVES = {
     TITLE: "Waves",
     EXPLORE: "Explorar",
     DIRECTIONS: "Direcciones",
@@ -86,7 +86,7 @@ const LANG_ES_MAPS = {
     NO_RESULTS_FOUND: "No se encontraron resultados."
 };
 
-const LANG_KO_MAPS = {
+const LANG_KO_WAVES = {
     TITLE: "Waves",
     EXPLORE: "탐색",
     DIRECTIONS: "길찾기",
@@ -108,7 +108,7 @@ const LANG_KO_MAPS = {
     NO_RESULTS_FOUND: "결과를 찾을 수 없습니다."
 };
 
-const LANG_ZH_MAPS = {
+const LANG_ZH_WAVES = {
     TITLE: "Waves",
     EXPLORE: "探索",
     DIRECTIONS: "路线",
