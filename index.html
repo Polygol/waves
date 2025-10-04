@@ -116,7 +116,7 @@
             transition: all 0.3s cubic-bezier(.3, 1.2, .64, 1) ! IMPORTANT;
             display: flex;
             align-items: center;
-            backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
             box-shadow: var(--sun-shadow);
             border: 1px solid var(--glass-border);
         }
@@ -157,7 +157,7 @@
             border: 1px solid var(--glass-border);
             background: var(--search-background);
             color: var(--text-color);
-            backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
             box-shadow: var(--sun-shadow);
             font-size: 14px;
             outline: none;
@@ -196,7 +196,7 @@
             justify-content: center;
             gap: 8px;
             height: 42px;
-            backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
             box-shadow: var(--sun-shadow);
             border: 1px solid var(--glass-border);
         }
@@ -230,7 +230,7 @@
             border: 1px solid var(--glass-border);
             background: var(--search-background);
             color: var(--text-color);
-            backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
             box-shadow: var(--sun-shadow);
             font-size: 14px;
             outline: none;
@@ -259,7 +259,7 @@
             font-size: 14px;
             cursor: pointer;
             transition: all 0.2s ease;
-            backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
             box-shadow: var(--sun-shadow);
         }
         .filter-btn.active, .filter-btn-sc.active {
@@ -285,7 +285,7 @@
             background-color: var(--search-background);
             border-radius: 25px;
             padding: 8px;
-            backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
             border: 1px solid var(--glass-border);
             z-index: 10001;
             width: auto;
@@ -319,7 +319,7 @@
             overflow: hidden;
             touch-action: none;
             user-select: none;
-            backdrop-filter: blur(10px) saturate(2) var(--edge-refraction-filter);
+            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(5px);
             box-shadow: var(--sun-shadow);
             border-top: 1px solid var(--glass-border);
             border-radius: 25px 25px 0 0;
@@ -414,7 +414,7 @@
             border-radius: 25px;
             border: 1px solid var(--glass-border);
             background: var(--search-background);
-            backdrop-filter: blur(5px) saturate(2) var(--edge-refraction-filter);
+            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
             box-shadow: var(--sun-shadow), 0 0 50px rgba(0, 0, 0, 0.2);
         }
         .directions-input-group {
@@ -490,10 +490,10 @@
         
             <!-- Part 5: Apply the displacement twice and combine the results. -->
             <!-- Pass 1: A positive scale refracts the top and left edges inward correctly. -->
-            <feDisplacementMap in="SourceGraphic" in2="displacement_map" scale="30" xChannelSelector="R" yChannelSelector="G" result="disp_positive"></feDisplacementMap>
+            <feDisplacementMap in="SourceGraphic" in2="displacement_map" scale="15" xChannelSelector="R" yChannelSelector="G" result="disp_positive"></feDisplacementMap>
             
             <!-- Pass 2: A negative scale refracts the bottom and right edges inward correctly. -->
-            <feDisplacementMap in="SourceGraphic" in2="displacement_map" scale="-30" xChannelSelector="R" yChannelSelector="G" result="disp_negative"></feDisplacementMap>
+            <feDisplacementMap in="SourceGraphic" in2="displacement_map" scale="-15" xChannelSelector="R" yChannelSelector="G" result="disp_negative"></feDisplacementMap>
             
             <!-- Part 6: Blend the two results. The 'lighten' mode takes the non-transparent pixels
                  from both passes. Since the "incorrect" refractions are pushed into transparent
