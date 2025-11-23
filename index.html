@@ -228,7 +228,7 @@
         </div>
     </div>
 
-    <script>
+<script>
         const CONFIG = { appId: 'polygol-connect-v1' };
         let room, sendAction;
         let currentConfig = null;
@@ -309,24 +309,36 @@
 
         // --- Scanner Logic ---
         function onScanSuccess(decodedText, decodedResult) {
-            if (!isScanning) return; // Prevent duplicate triggers
+            if (!isScanning) return;
 
             try {
                 const config = JSON.parse(decodedText);
+                
+                // Check if it looks like a valid Waves config
                 if(config.r && config.k) {
-                    isScanning = false; // Lock scanning immediately
+                    console.log("Valid code found, connecting...");
                     
-                    html5QrCode.stop().then(() => {
-                         document.getElementById('qr-reader').innerHTML = ""; // Clear video element
-                         connect(config);
-                    }).catch(err => {
-                        console.error("Stop failed", err);
-                        connect(config); // Try connecting anyway
-                    });
+                    // 1. Lock scanning to prevent duplicates
+                    isScanning = false; 
+                    
+                    // 2. Connect IMMEDIATELY (Don't wait for camera to stop)
+                    connect(config);
+
+                    // 3. Stop camera in background
+                    if(html5QrCode) {
+                        html5QrCode.stop().then(() => {
+                            document.getElementById('qr-reader').innerHTML = "";
+                        }).catch(err => {
+                            console.warn("Camera stop warning (ignored):", err);
+                            document.getElementById('qr-reader').innerHTML = "";
+                        });
+                    }
                 }
             } catch(e) {
-                // Log but don't alert to avoid loop
-                console.warn("Scanned invalid code:", decodedText);
+                // Invalid JSON. 
+                // We do NOT stop scanning here, so the user can try again 
+                // without tapping the button again.
+                console.log("Ignored invalid QR code:", decodedText);
             }
         }
 
@@ -363,7 +375,6 @@
         // --- Init ---
         const saved = localStorage.getItem('waves_client_config');
         if(saved) {
-            // If saved config exists, connect immediately
             connect(JSON.parse(saved));
         }
     </script>
