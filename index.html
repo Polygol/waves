@@ -9,12 +9,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Dependencies -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
+    
+    <!-- Trystero Module -->
     <script type="module">
         import { joinRoom, selfId } from 'https://esm.sh/trystero@0.15.1/torrent';
         window.Trystero = { joinRoom, selfId };
         window.dispatchEvent(new Event('trystero-ready'));
     </script>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
 
     <style>
@@ -54,7 +57,14 @@
             gap: 20px;
         }
         
-        #qr-reader { width: 100%; border-radius: 20px; overflow: hidden; border: 1px solid #333; }
+        #qr-reader { 
+            width: 100%; 
+            min-height: 250px; /* Important: Reserve space for camera */
+            border-radius: 20px; 
+            overflow: hidden; 
+            border: 1px solid #333; 
+            background: #111;
+        }
         
         .btn {
             background: var(--card-bg);
@@ -222,6 +232,8 @@
         const CONFIG = { appId: 'polygol-connect-v1' };
         let room, sendAction;
         let currentConfig = null;
+        let html5QrCode = null;
+        let isScanning = false;
 
         // --- UI Logic ---
         function showView(id) {
@@ -244,17 +256,17 @@
 
         // --- Connection Logic ---
         function connect(config) {
+            // Wait for Trystero if it's not loaded yet
             if (!window.Trystero) {
-                // Wait for module to load
                 document.getElementById('status-text').innerText = "Loading Libraries...";
                 window.addEventListener('trystero-ready', () => connect(config), { once: true });
                 return;
             }
-    
+
             currentConfig = config;
             localStorage.setItem('waves_client_config', JSON.stringify(config));
             showView('view-remote');
-    
+
             room = window.Trystero.joinRoom(CONFIG, config.r);
             const [send, get] = room.makeAction('waves-cmd');
             sendAction = send;
@@ -297,31 +309,47 @@
 
         // --- Scanner Logic ---
         function onScanSuccess(decodedText, decodedResult) {
+            if (!isScanning) return; // Prevent duplicate triggers
+
             try {
                 const config = JSON.parse(decodedText);
                 if(config.r && config.k) {
-                    // Stop scanning
+                    isScanning = false; // Lock scanning immediately
+                    
                     html5QrCode.stop().then(() => {
+                         document.getElementById('qr-reader').innerHTML = ""; // Clear video element
                          connect(config);
+                    }).catch(err => {
+                        console.error("Stop failed", err);
+                        connect(config); // Try connecting anyway
                     });
                 }
             } catch(e) {
-                alert("Invalid QR Code");
+                // Log but don't alert to avoid loop
+                console.warn("Scanned invalid code:", decodedText);
             }
         }
 
-        let html5QrCode;
-
         document.getElementById('btn-scan').onclick = () => {
+            if (isScanning) return;
+            
             html5QrCode = new Html5Qrcode("qr-reader");
+            isScanning = true;
+            document.getElementById('btn-scan').style.display = 'none';
+            
+            // Use responsive box size based on viewport
+            const qrBoxSize = Math.min(window.innerWidth - 50, 250);
+
             html5QrCode.start(
                 { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                onScanSuccess
+                { fps: 10, qrbox: { width: qrBoxSize, height: qrBoxSize } },
+                onScanSuccess,
+                (errorMessage) => { /* Ignore frame errors */ }
             ).catch(err => {
-                alert("Camera error: " + err);
+                isScanning = false;
+                document.getElementById('btn-scan').style.display = 'block';
+                alert("Camera failed: " + err);
             });
-            document.getElementById('btn-scan').style.display = 'none';
         };
 
         document.getElementById('btn-manual').onclick = () => {
@@ -335,6 +363,7 @@
         // --- Init ---
         const saved = localStorage.getItem('waves_client_config');
         if(saved) {
+            // If saved config exists, connect immediately
             connect(JSON.parse(saved));
         }
     </script>
