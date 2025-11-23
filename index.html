@@ -9,7 +9,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <!-- Dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/trystero@0.15.1/dist/trystero-torrent.min.js"></script>
+    <script type="module">
+        import { joinRoom, selfId, getPeers } from 'https://esm.sh/trystero@0.15.1/torrent';
+        window.Trystero = { joinRoom, selfId, getPeers };
+        window.dispatchEvent(new Event('trystero-ready'));
+    </script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
 
@@ -240,11 +244,18 @@
 
         // --- Connection Logic ---
         function connect(config) {
+            if (!window.Trystero) {
+                // Wait for module to load
+                document.getElementById('status-text').innerText = "Loading Libraries...";
+                window.addEventListener('trystero-ready', () => connect(config), { once: true });
+                return;
+            }
+    
             currentConfig = config;
             localStorage.setItem('waves_client_config', JSON.stringify(config));
             showView('view-remote');
-
-            room = Trystero.joinRoom(CONFIG, config.r);
+    
+            room = window.Trystero.joinRoom(CONFIG, config.r);
             const [send, get] = room.makeAction('waves-cmd');
             sendAction = send;
 
