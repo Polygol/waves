@@ -1,808 +1,331 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" href="favicon.png" type="image/png">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Waves</title>
-    <script src="/assets/gurapp/api/gurasuraisu-api.js"></script>
-    <!-- MapLibre GL JS for Map Display -->
-    <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
-    <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,700,1,0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Waves Remote</title>
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/trystero@0.15.1/dist/trystero-torrent.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
 
     <style>
         :root {
-            --edge-refraction-filter: url('#edge-refraction-only');
-            --sun-shadow: 0 0 0 0 transparent;
-            --background-color-dark: #1c1c1c;
-            --text-color-dark: #f9f9f9;
-            --secondary-text-color-dark: rgba(255, 255, 255, 0.7);
-            --modal-background-dark: rgba(51, 51, 51, 0.8);
-            --modal-transparent-dark: rgba(51, 51, 51, 0.7);
-            --search-background-dark: rgba(51, 51, 51, 0.5);
-            --dark-overlay: rgba(51, 51, 51, 0.2);
-            --dark-transparent: rgba(255, 255, 255, 0.1);
-            --glass-border-dark: rgba(100, 100, 100, 0.2);
-            --background-color-light: #f0f0f0;
-            --text-color-light: #333333;
-            --secondary-text-color-light: rgba(0, 0, 0, 0.7);
-            --modal-background-light: rgba(220, 220, 220, 0.8);
-            --modal-transparent-light: rgba(240, 240, 240, 0.7);
-            --search-background-light: rgba(220, 220, 220, 0.5);
-            --light-overlay: rgba(220, 220, 220, 0.2);
-            --light-transparent: rgba(255, 255, 255, 0.1);
-            --glass-border-light: rgba(200, 200, 200, 0.2);
-            --background-color: var(--background-color-dark);
-            --text-color: var(--text-color-dark);
-            --secondary-text-color: var(--secondary-text-color-dark);
-            --modal-background: var(--modal-background-dark);
-            --modal-transparent: var(--modal-transparent-dark);
-            --search-background: var(--search-background-dark);
-            --overlay-color: var(--dark-overlay);
-            --transparent-color: var(--dark-transparent);
-            --glass-border: var(--glass-border-dark);
+            --bg: #000000;
+            --card-bg: #1c1c1e;
+            --accent: #0a84ff;
+            --text: #ffffff;
+            --text-sec: #8e8e93;
         }
-        body.light-theme {
-            --background-color: var(--background-color-light);
-            --text-color: var(--text-color-light);
-            --secondary-text-color: var(--secondary-text-color-light);
-            --modal-background: var(--modal-background-light);
-            --modal-transparent: var(--modal-transparent-light);
-            --search-background: var(--search-background-light);
-            --overlay-color: var(--light-overlay);
-            --transparent-color: var(--light-transparent);
-            --glass-border: var(--glass-border-light);
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-        body {
-            background-color: var(--background-color);
-            min-height: 100vh;
-            display: flex;
-            user-select: none;
-            position: relative;
-            overflow: hidden;
-            transition: background-color 0.3s, color 0.3s, background-image 0.5s;
-            color: var(--text-color);
-        }
-        .toolbar {
-            display: flex;
-            justify-content: center;
-            align-content: center;
-            flex-direction: row;
-            gap: 12px;
-            padding: 15px 20px;
-            background-color: transparent;
-            border: none;
-            position: fixed;
-            top: 0px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            transition: top 0.3s ease;
-            width: 100%;
-            flex-wrap: wrap;
-            height: 80px;
-        }
-        .toolbar.hidden { top: -100px; opacity: 0; }
-        .toolbar.hidden .album-art { margin-top: 0px !IMPORTANT; }
-        .toolbar::before { content: ""; position: absolute; inset: 0; z-index: -1; }
-        .toolbar::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -2;
-            backdrop-filter: blur(2.5px);
-            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 0) 100%);
-            -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 0) 100%);
-        }
-        .tab-btn {
-            background-color: var(--search-background);
-            color: transparent;
-            border-radius: 35px;
-            padding: 12px 16px;
-            font-size: 0;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(.3, 1.2, .64, 1) ! IMPORTANT;
-            display: flex;
-            align-items: center;
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
-            box-shadow: var(--sun-shadow);
-            border: 1px solid var(--glass-border);
-        }
-        .tab-btn.active {
-            background-color: var(--secondary-text-color);
-            color: var(--background-color);
-            border-radius: 35px;
-            corner-shape: superellipse(1.5);
-            font-family: 'Open Runde';
-            font-weight: 500;
-            padding: 10px 18px 10px 16px;
-            font-size: revert;
-            gap: 12px;
-        }
-        .toolbar .tab-btn .material-symbols-rounded {
-            transition: color 0.3s;
-            color: var(--text-color);
-            font-size: 20px;
-        }
-        .toolbar .tab-btn.active .material-symbols-rounded { color: var(--background-color) !important; }
-        .view-container {
-            flex-grow: 1;
-            width: 100%;
-            padding: 80px 20px 0 20px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            min-height: 0;
-        }
-        .view-container::-webkit-scrollbar { width: 8px; }
-        .view-container::-webkit-scrollbar-track { background: transparent; }
-        .view-container::-webkit-scrollbar-thumb { background-color: var(--search-background); border-radius: 50px; }
-        .item-card-title { font-weight: 500; font-family: 'Open Runde'; }
-        .item-card-subtitle { font-size: 14px; color: var(--secondary-text-color); }
-        .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 20px; }
-        .library-search-input {
-            width: 100%;
-            padding: 10px 15px 10px 40px;
-            border-radius: 25px;
-            border: 1px solid var(--glass-border);
-            background: var(--search-background);
-            color: var(--text-color);
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
-            box-shadow: var(--sun-shadow);
-            font-size: 14px;
-            outline: none;
-        }
-        .search-icon {
-            font-size: 22px;
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--secondary-text-color);
-            pointer-events: none;
-        }
-        .filter-container { display: flex; gap: 10px; }
-        .filter-btn, .filter-btn-sc {
-            padding: 8px 16px;
-            height: 42px;
-            border-radius: 10px;
-        }
-        .filter-btn.active, .filter-btn-sc.active {
-            background: var(--secondary-text-color);
-            color: var(--background-color);
-            border-radius: 25px !important;
-            font-family: 'Open Runde';
-            font-weight: 500;
-        }
-        .action-btn {
-            background-color: var(--search-background);
-            color: var(--text-color);
-            border: none;
-            border-radius: 50px;
-            padding: 8px 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            height: 42px;
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
-            box-shadow: var(--sun-shadow);
-            border: 1px solid var(--glass-border);
-        }
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background-color: var(--overlay-color);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        .modal-overlay.visible { opacity: 1; pointer-events: auto; }
-        .music-title {
-            font-size: 1.3rem;
-            word-wrap: break-word;
-            font-weight: bold;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            line-height: 1.3;
-            font-family: 'Open Runde';
-        }
-        .search-input {
-            width: 100%;
-            padding: 10px 15px 10px 40px;
-            border-radius: 25px;
-            border: 1px solid var(--glass-border);
-            background: var(--search-background);
-            color: var(--text-color);
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
-            box-shadow: var(--sun-shadow);
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s;
-            flex-grow: 1;
-        }
-        .search-input:focus { border-color: var(--modal-background); }
-        .search-input::placeholder { color: var(--secondary-text-color); }
-        .search-icon {
-            font-size: 20px;
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--secondary-text-color);
-            pointer-events: none;
-            z-index: 1;
-        }
-        .filter-btn, .filter-btn-sc {
-            flex: 1;
-            padding: 8px 10px;
-            border-radius: 20px;
-            border: 1px solid var(--glass-border);
-            background: var(--search-background);
-            color: var(--secondary-text-color);
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
-            box-shadow: var(--sun-shadow);
-        }
-        .filter-btn.active, .filter-btn-sc.active {
-            background: var(--secondary-text-color);
-            color: var(--background-color);
-        }
-        .material-symbols-rounded {
-          font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24;
-          vertical-align: middle;
-        }
-        [onclick], button, a, input[type="button"], input[type="submit"], .clickable {
-          cursor: pointer;
-          transform: scale(1);
-          transition: all 0.15s cubic-bezier(0.2, 0, 0.38, 0.9);
-        }
-        [onclick]:active, button:active, a:active, input[type="button"]:active, input[type="submit"]:active, .clickable:active {
-          transform: scale(0.96);
-          transition: all 0.1s cubic-bezier(0.2, 0, 0.38, 0.9);
-          filter: brightness(1.5);
-        }
-        .context-menu {
-            position: absolute;
-            background-color: var(--search-background);
-            border-radius: 35px;
-            corner-shape: superellipse(1.5);
-            padding: 8px;
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
-            border: 1px solid var(--glass-border);
-            z-index: 10001;
-            width: auto;
-            box-shadow: var(--sun-shadow), 0 4px 20px rgba(0,0,0,0.2);
-            opacity: 0;
-            transform: translateY(10px) scale(0.95) scaleY(0.9);
-            pointer-events: none;
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            transform-origin: top;
-            margin: 10px;
-        }
-        .context-menu.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-        .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        .menu-item .material-symbols-rounded { font-size: 20px; }
-        .menu-separator { height: 1px; background-color: var(--glass-border); margin: 8px 0; }
-        .drawer {
-            position: fixed;
-            bottom: -100%; /* Initially hidden */
-            left: 0;
-            width: 100%;
-            background-color: var(--search-background);
-            z-index: 1002;
-            overflow: hidden;
-            touch-action: none;
-            user-select: none;
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(5px);
-            box-shadow: var(--sun-shadow);
-            border-top: 1px solid var(--glass-border);
-            border-radius: 50px 50px 0 0;
-            corner-shape: superellipse(1.5);
-            transform-origin: bottom;
-            will-change: transform, opacity, bottom;
-            transition: all 0.3s cubic-bezier(.3,1.2,.64,1);
-            max-height: calc(100% - 80px);
-        }
-        .drawer.open { bottom: 0; }
-        .drawer-handle {
-            width: 50px;
-            height: 5px;
-            background-color: var(--secondary-text-color);
-            border-radius: 3px;
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            cursor: grab;
-        }
-        .drawer-content {
-            max-height: calc(100vh - 150px);
-            overflow-y: auto;
-            user-select: none;
-            padding: 20px 20px 140px 20px;
-        }
-        .drawer-content::-webkit-scrollbar { width: 4px; }
-        .drawer-content::-webkit-scrollbar-track { background: transparent; }
-        .drawer-content::-webkit-scrollbar-thumb { background: var(--modal-transparent); border-radius: 4px; }
-        .drawer-header { padding: 40px 20px 10px 20px; text-align: center; }
-        #drawer-title { font-size: 1.5rem; }
-        #drawer-subtitle { color: var(--secondary-text-color); }
-        @media (min-width: 600px) { .drawer { left: 5vw !important; width: 90vw !important; border: 1px solid var(--glass-border); } }
-        @media (min-width: 800px) { .drawer { left: 15vw !important; width: 70vw !important; border: 1px solid var(--glass-border); } }
-        @media (min-width: 1000px) { .drawer { left: 25vw !important; width: 50vw !important; border: 1px solid var(--glass-border); } }
         
-        /* --- MAP-SPECIFIC OVERRIDES & ADDITIONS --- */
-        #map-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-        /* Hide default attribution, we will add our own */
-        .maplibregl-ctrl-bottom-right, .maplibregl-ctrl-bottom-left {
-            display: none;
-        }
-        /* Position nav controls below top UI */
-        .maplibregl-ctrl-top-right {
-             margin-top: 150px;
-        }
-        .attribution-footer {
-            position: fixed;
-            bottom: 16;
-            right: 12px;
-            z-index: 10;
-            background-color: rgba(0,0,0,0.5);
-            color: white;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            pointer-events: auto;
-        }
-        .attribution-footer a {
-            color: #bde0ff;
-            text-decoration: none;
-        }
-        .ui-overlay {
-            position: relative;
-            z-index: 10;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; /* Allows map interaction by default */
-        }
-        .ui-overlay > * {
-            pointer-events: auto; /* Re-enable pointer events for UI elements */
-        }
-        .panel-container {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 95%;
-            max-width: 500px;
-            z-index: 1003;
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+        
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            padding: 12px;
-            border-radius: 35px;
-            corner-shape: superellipse(1.5);
-            border: 1px solid var(--glass-border);
-            background: var(--search-background);
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
-            box-shadow: var(--sun-shadow), 0 0 50px rgba(0, 0, 0, 0.2);
+            height: 100vh;
+            overflow: hidden;
         }
-        .directions-input-group {
-            position: relative;
+
+        /* Views */
+        .view { display: none; height: 100%; flex-direction: column; }
+        .view.active { display: flex; }
+
+        /* Setup View */
+        .setup-container {
+            flex: 1;
             display: flex;
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 20px;
         }
-        .directions-input {
-            width: 100%;
-            padding: 10px 15px 10px 40px;
-            border-radius: 25px;
-            corner-shape: superellipse(1.5);
-            border: 1px solid var(--glass-border);
-            background: var(--dark-transparent); /* Use a slightly different bg */
-            color: var(--text-color);
-            font-size: 14px;
-            outline: none;
-        }
-        .directions-input-group .material-symbols-rounded {
-            position: absolute;
-            left: 12px;
-            color: var(--secondary-text-color);
-        }
-        .location-btn {
-            background: none;
+        
+        #qr-reader { width: 100%; border-radius: 20px; overflow: hidden; border: 1px solid #333; }
+        
+        .btn {
+            background: var(--card-bg);
+            color: var(--accent);
             border: none;
-            color: var(--text-color);
+            padding: 16px 32px;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: transform 0.1s;
         }
-        .travel-mode-selector {
+        .btn:active { transform: scale(0.98); filter: brightness(1.2); }
+        .btn.primary { background: var(--accent); color: white; }
+
+        /* Remote View */
+        .remote-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .status-dot {
+            width: 10px; height: 10px;
+            background: #333;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-dot.connected { background: #32d74b; box-shadow: 0 0 10px #32d74b; }
+
+        .preview-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 10px;
+            margin-bottom: 20px;
+            position: relative;
+            min-height: 200px;
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin-top: 8px;
+            align-items: center;
         }
-        .travel-mode-btn {
-            background-color: var(--dark-transparent);
-            border: 1px solid var(--glass-border);
-            color: var(--text-color);
-            border-radius: 25px;
-            padding: 6px 14px;
+        
+        #remote-screen-img {
+            width: 100%;
+            border-radius: 16px;
+            opacity: 0.5;
+            transition: opacity 0.3s;
+        }
+        
+        .control-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .control-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .media-row {
+            grid-column: span 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: white;
+            padding: 10px;
+        }
+        .icon-btn span { font-size: 32px; }
+        .play-btn span { font-size: 48px; }
+
+        .slider-container {
+            grid-column: span 2;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 15px;
+            padding: 10px;
         }
-        .travel-mode-btn.active {
-            background-color: var(--secondary-text-color);
-            color: var(--background-color);
+        
+        input[type=range] {
+            flex: 1;
+            accent-color: var(--accent);
+            height: 6px;
+            border-radius: 3px;
         }
+
     </style>
 </head>
-<body data-app-name="WAVES">
-    <svg style="display: none">
-        <filter id="edge-refraction-only" color-interpolation-filters="linearRGB">
-            <!-- Part 1: Generate the edge turbulence pattern -->
-            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" result="turbulence"></feTurbulence>
-            <feMorphology in="SourceGraphic" operator="erode" radius="4" result="eroded"></feMorphology>
-            <feComposite in="SourceGraphic" in2="eroded" operator="out" result="border_mask"></feComposite>
-            <feComposite in="turbulence" in2="border_mask" operator="in" result="edge_turbulence"></feComposite>
-    
-            <!-- Part 2: Create the two displacement passes -->
-            <feDisplacementMap in="SourceGraphic" in2="edge_turbulence" scale="15" xChannelSelector="R" yChannelSelector="G" result="disp_positive"></feDisplacementMap>
-            <feDisplacementMap in="SourceGraphic" in2="edge_turbulence" scale="-15" xChannelSelector="R" yChannelSelector="G" result="disp_negative"></feDisplacementMap>
-    
-            <!-- Part 3: Create masks to isolate the correct halves of each pass -->
-            <!-- Mask for the Top-Left Half -->
-            <feFlood flood-color="white" width="50%" height="50%" x="0" y="0" result="topLeftRect"></feFlood>
-            <!-- Mask for the Bottom-Right Half -->
-            <feFlood flood-color="white" width="50%" height="50%" x="50%" y="50%" result="bottomRightRect"></feFlood>
-    
-            <!-- Part 4: Apply the masks -->
-            <!-- Isolate the correctly refracted top-left from the positive pass -->
-            <feComposite in="disp_positive" in2="topLeftRect" operator="in" result="topLeft_part"></feComposite>
-            <!-- Isolate the correctly refracted bottom-right from the negative pass -->
-            <feComposite in="disp_negative" in2="bottomRightRect" operator="in" result="bottomRight_part"></feComposite>
-    
-            <!-- 
-               Part 5: Merge the perfectly isolated parts.
-               Because there is no overlap, 'lighten' works perfectly, but you could also use feMerge.
-            -->
-            <feBlend in="topLeft_part" in2="bottomRight_part" mode="lighten" result="blended_image"></feBlend>
+<body>
+
+    <!-- 1. SETUP VIEW -->
+    <div id="view-setup" class="view active">
+        <div class="setup-container">
+            <span class="material-symbols-rounded" style="font-size: 64px; color: var(--accent);">waves</span>
+            <h1>Connect to Polygol</h1>
+            <p style="color: var(--text-sec); text-align: center;">Scan the QR code found in Polygol Settings > Connect</p>
             
-            <!-- Part 6: Adjust final opacity -->
-            <feComponentTransfer in="blended_image">
-                <feFuncA type="linear" slope="0.95"></feFuncA>
-            </feComponentTransfer>
-        </filter>
-    </svg>
+            <div id="qr-reader"></div>
+            
+            <button class="btn primary" id="btn-scan">Scan QR Code</button>
+            <input type="text" id="manual-code" placeholder="Or paste code here" style="background: #333; border:none; padding: 15px; border-radius: 10px; color: white; width: 100%; text-align: center;">
+            <button class="btn" id="btn-manual">Connect Manually</button>
+        </div>
+    </div>
 
-    <div id="map-container"></div>
-
-    <div class="ui-overlay">
-        <div class="toolbar">
-            <button class="tab-btn active" id="explore-btn"><span class="material-symbols-rounded">map</span>Explore</button>
-            <button class="tab-btn" id="directions-btn"><span class="material-symbols-rounded">directions</span>Directions</button>
-            <button class="tab-btn" id="game-btn"><span class="material-symbols-rounded">public</span>Game</button>
+    <!-- 2. REMOTE VIEW -->
+    <div id="view-remote" class="view">
+        <div class="remote-header">
+            <div style="display: flex; align-items: center;">
+                <div id="status-dot" class="status-dot"></div>
+                <span id="status-text" style="font-weight: 600;">Connecting...</span>
+            </div>
+            <button class="icon-btn" onclick="disconnect()"><span class="material-symbols-rounded">logout</span></button>
         </div>
 
-        <div class="panel-container" id="explore-panel">
-            <div class="search-container" style="position: relative; top: 0; left: 0; transform: none; width: 100%; max-width: none;">
-                <span class="material-symbols-rounded search-icon">search</span>
-                <input type="text" id="search-input" placeholder="Search for a place or address" class="library-search-input" style="background-color: transparent; backdrop-filter: none; border: none; box-shadow: none;">
-            </div>
+        <!-- Screenshot Preview -->
+        <div class="preview-card" onclick="requestScreenshot()">
+            <img id="remote-screen-img" src="" alt="Tap to refresh">
+            <span style="position: absolute; color: white; font-size: 12px; bottom: 15px; pointer-events: none;">Tap to Refresh</span>
         </div>
 
-        <div class="panel-container" id="directions-panel" style="display: none;">
-            <div class="directions-input-group">
-                <span class="material-symbols-rounded">trip_origin</span>
-                <input type="text" id="start-input" class="directions-input" placeholder="Starting point">
-                <button id="get-location-btn" class="location-btn"><span class="material-symbols-rounded">my_location</span></button>
+        <div class="control-grid">
+            <!-- Power -->
+            <div class="control-card" onclick="sendCommand('blackout')">
+                <span class="material-symbols-rounded" style="font-size: 32px; color: #ff453a;">power_settings_new</span>
+                <span>Sleep</span>
             </div>
-            <div class="directions-input-group">
-                <span class="material-symbols-rounded">location_on</span>
-                <input type="text" id="end-input" class="directions-input" placeholder="Choose destination">
+            <div class="control-card" onclick="sendCommand('wake')">
+                <span class="material-symbols-rounded" style="font-size: 32px; color: #32d74b;">wb_sunny</span>
+                <span>Wake</span>
             </div>
-            <div class="travel-mode-selector">
-                <button class="travel-mode-btn active" data-mode="driving-car"><span class="material-symbols-rounded">directions_car</span>Drive</button>
-                <button class="travel-mode-btn" data-mode="foot-walking"><span class="material-symbols-rounded">directions_walk</span>Walk</button>
-                <button class="travel-mode-btn" data-mode="cycling-road"><span class="material-symbols-rounded">directions_bike</span>Cycle</button>
-            </div>
-        </div>
 
-        <div class="attribution-footer">
-            <a href="https://openfreemap.org/" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>
-        </div>
+            <!-- Media -->
+            <div class="control-card media-row">
+                <button class="icon-btn" onclick="sendMedia('prev')"><span class="material-symbols-rounded">skip_previous</span></button>
+                <button class="icon-btn play-btn" onclick="sendMedia('playPause')"><span class="material-symbols-rounded">play_circle</span></button>
+                <button class="icon-btn" onclick="sendMedia('next')"><span class="material-symbols-rounded">skip_next</span></button>
+            </div>
 
-        <div id="drawer" class="drawer">
-            <div class="drawer-handle"></div>
-            <div class="drawer-header"><h2 id="drawer-title"></h2><p id="drawer-subtitle"></p></div>
-            <div class="drawer-content" id="drawer-content"></div>
+            <!-- Brightness -->
+            <div class="control-card slider-container">
+                <span class="material-symbols-rounded">brightness_low</span>
+                <input type="range" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
+                <span class="material-symbols-rounded">brightness_high</span>
+            </div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- IMPORTANT: ADD YOUR API KEY HERE ---
-            const OPENROUTESERVICE_API_KEY = 'YOUR_API_KEY_HERE'; 
-            // ---
+        const CONFIG = { appId: 'polygol-connect-v1' };
+        let room, sendAction;
+        let currentConfig = null;
 
-            let map;
-            let searchMarker, startMarker, endMarker;
-            let startCoords, endCoords;
+        // --- UI Logic ---
+        function showView(id) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
 
-            map = new maplibregl.Map({
-                container: 'map-container',
-                style: 'https://tiles.openfreemap.org/styles/liberty',
-                center: [2.3522, 48.8566],
-                zoom: 11,
-            });
-
-            map.on('load', () => {
-                // Add a source and layer for drawing the route
-                map.addSource('route', { type: 'geojson', data: null });
-                map.addLayer({
-                    id: 'route-layer',
-                    type: 'line',
-                    source: 'route',
-                    layout: { 'line-join': 'round', 'line-cap': 'round' },
-                    paint: { 'line-color': '#45b7d1', 'line-width': 6, 'line-opacity': 0.8 }
-                });
-            });
-
-            map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-            
-            const exploreBtn = document.getElementById('explore-btn');
-            const directionsBtn = document.getElementById('directions-btn');
-            const gameBtn = document.getElementById('game-btn');
-            const explorePanel = document.getElementById('explore-panel');
-            const directionsPanel = document.getElementById('directions-panel');
-
-            function setActiveButton(activeBtn) {
-                [exploreBtn, directionsBtn, gameBtn].forEach(btn => btn.classList.remove('active'));
-                activeBtn.classList.add('active');
-                
-                explorePanel.style.display = 'none';
-                directionsPanel.style.display = 'none';
-
-                if (activeBtn === exploreBtn) explorePanel.style.display = 'flex';
-                if (activeBtn === directionsBtn) directionsPanel.style.display = 'flex';
-                clearMap();
+        function setStatus(connected) {
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+            if(connected) {
+                dot.classList.add('connected');
+                text.innerText = "Connected";
+                requestScreenshot(); // Get initial view
+            } else {
+                dot.classList.remove('connected');
+                text.innerText = "Disconnected";
             }
+        }
 
-            exploreBtn.addEventListener('click', () => setActiveButton(exploreBtn));
-            directionsBtn.addEventListener('click', () => setActiveButton(directionsBtn));
-            gameBtn.addEventListener('click', () => {
-                setActiveButton(gameBtn);
-                Gurasuraisu.showPopup('Game mode is coming soon!');
-            });
-            
-            // --- Generic Search Function ---
-            const performSearch = async (query) => {
-                const endpoint = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10`;
-                try {
-                    const response = await fetch(endpoint, { headers: { 'User-Agent': 'GurasuraisuMaps/1.0' } });
-                    if (!response.ok) throw new Error('Network error');
-                    return await response.json();
-                } catch (error) {
-                    console.error('Search failed:', error);
-                    Gurasuraisu.showPopup('Could not perform search.');
-                    return [];
+        // --- Connection Logic ---
+        function connect(config) {
+            currentConfig = config;
+            localStorage.setItem('waves_client_config', JSON.stringify(config));
+            showView('view-remote');
+
+            room = Trystero.joinRoom(CONFIG, config.r);
+            const [send, get] = room.makeAction('waves-cmd');
+            sendAction = send;
+
+            // Handle incoming (Screenshots)
+            get((payload, peerId) => {
+                if (payload.type === 'screenshot') {
+                    document.getElementById('remote-screen-img').src = payload.data;
+                    document.getElementById('remote-screen-img').style.opacity = '1';
                 }
-            };
-            
-            const displaySearchResults = (results, onResultClick) => {
-                let contentHtml;
-                if (results.length === 0) {
-                    contentHtml = '<p style="text-align: center; color: var(--secondary-text-color);">No results found.</p>';
-                } else {
-                    const getResultParts = (displayName) => ({ title: displayName.split(', ')[0], subtitle: displayName.split(', ').slice(1).join(', ') });
-                    contentHtml = results.map(result => `
-                        <div class="menu-item clickable" data-lat="${result.lat}" data-lon="${result.lon}" data-name="${result.display_name.split(',')[0]}">
-                            <span class="material-symbols-rounded">location_on</span>
-                            <div class="menu-item-info">
-                                <div class="menu-item-title">${getResultParts(result.display_name).title}</div>
-                                <div class="menu-item-subtitle">${getResultParts(result.display_name).subtitle}</div>
-                            </div>
-                        </div>`).join('');
-                }
-                openDrawer('Search Results', '', contentHtml, onResultClick);
-            };
-
-            // --- Explore View Logic ---
-            const searchInput = document.getElementById('search-input');
-            let searchTimeout;
-            searchInput.addEventListener('input', () => {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(async () => {
-                    const query = searchInput.value.trim();
-                    if (query.length < 3) {
-                        closeDrawer();
-                        return;
-                    }
-                    const results = await performSearch(query);
-                    displaySearchResults(results, (item) => {
-                        const lat = parseFloat(item.dataset.lat);
-                        const lon = parseFloat(item.dataset.lon);
-                        if (searchMarker) searchMarker.remove();
-                        searchMarker = new maplibregl.Marker({ color: '#ff6b6b' }).setLngLat([lon, lat]).addTo(map);
-                        map.flyTo({ center: [lon, lat], zoom: 15, speed: 1.5 });
-                        closeDrawer(); // Auto-close on selection
-                    });
-                }, 500);
-            });
-            
-            // --- Directions View Logic ---
-            const startInput = document.getElementById('start-input');
-            const endInput = document.getElementById('end-input');
-            
-            [startInput, endInput].forEach(input => {
-                input.addEventListener('input', () => {
-                    clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(async () => {
-                        const query = input.value.trim();
-                        if (query.length < 3) return;
-                        const results = await performSearch(query);
-                        displaySearchResults(results, (item) => {
-                            const lat = parseFloat(item.dataset.lat);
-                            const lon = parseFloat(item.dataset.lon);
-                            const name = item.dataset.name;
-                            input.value = name;
-                            if(input.id === 'start-input') startCoords = [lon, lat];
-                            else endCoords = [lon, lat];
-                            
-                            if (startCoords && endCoords) getRoute();
-                            closeDrawer(); // Auto-close on selection
-                        });
-                    }, 500);
-                });
             });
 
-            document.getElementById('get-location-btn').addEventListener('click', () => {
-                if (!navigator.geolocation) return Gurasuraisu.showPopup('Geolocation is not supported.');
-                navigator.geolocation.getCurrentPosition(pos => {
-                    startCoords = [pos.coords.longitude, pos.coords.latitude];
-                    startInput.value = 'My Current Location';
-                    if (startMarker) startMarker.remove();
-                    startMarker = new maplibregl.Marker({ color: '#4ecdc4' }).setLngLat(startCoords).addTo(map);
-                    map.flyTo({ center: startCoords, zoom: 15 });
-                    if(endCoords) getRoute();
-                }, () => Gurasuraisu.showPopup('Unable to retrieve your location.'));
+            room.onPeerJoin(() => setStatus(true));
+            room.onPeerLeave(() => setStatus(false));
+        }
+
+        function disconnect() {
+            localStorage.removeItem('waves_client_config');
+            window.location.reload();
+        }
+
+        function sendCommand(type, data = null) {
+            if(!sendAction) return;
+            // Standard payload with Auth Key
+            sendAction({
+                auth: currentConfig.k,
+                type: type,
+                data: data
             });
+        }
 
-            document.querySelectorAll('.travel-mode-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelector('.travel-mode-btn.active').classList.remove('active');
-                    btn.classList.add('active');
-                    if (startCoords && endCoords) getRoute();
-                });
-            });
+        function sendMedia(action) {
+            sendCommand('media', { action: action });
+        }
 
-            async function getRoute() {
-                if (OPENROUTESERVICE_API_KEY === 'YOUR_API_KEY_HERE' || !OPENROUTESERVICE_API_KEY) {
-                    return Gurasuraisu.showPopup('API key is missing for directions.');
-                }
-                const travelMode = document.querySelector('.travel-mode-btn.active').dataset.mode;
-                const url = `https://api.openrouteservice.org/v2/directions/${travelMode}?api_key=${OPENROUTESERVICE_API_KEY}&start=${startCoords.join(',')}&end=${endCoords.join(',')}`;
+        function requestScreenshot() {
+            document.getElementById('remote-screen-img').style.opacity = '0.3'; // Visual feedback
+            sendCommand('requestScreenshot');
+        }
 
-                try {
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    if (data.error) throw new Error(data.error.message);
-
-                    const routeGeoJSON = data.features[0];
-                    map.getSource('route').setData(routeGeoJSON);
-                    
-                    if (startMarker) startMarker.remove();
-                    startMarker = new maplibregl.Marker({ color: '#4ecdc4' }).setLngLat(startCoords).addTo(map);
-                    if (endMarker) endMarker.remove();
-                    endMarker = new maplibregl.Marker({ color: '#ff6b6b' }).setLngLat(endCoords).addTo(map);
-
-                    const bounds = new maplibregl.LngLatBounds(startCoords, endCoords);
-                    routeGeoJSON.geometry.coordinates.forEach(coord => bounds.extend(coord));
-                    map.fitBounds(bounds, { padding: 80, duration: 1000 });
-
-                    displayRouteSteps(data.features[0].properties.segments[0].steps, data.features[0].properties.summary);
-                } catch (error) {
-                    Gurasuraisu.showPopup(`Could not get route: ${error.message}`);
-                    console.error("Routing error:", error);
-                }
-            }
-            
-            function displayRouteSteps(steps, summary) {
-                const duration = Math.round(summary.duration / 60);
-                const distance = (summary.distance / 1000).toFixed(1);
-
-                const stepsHtml = steps.map(step => `
-                    <div class="menu-item">
-                        <span class="material-symbols-rounded">turn_right</span> <!-- Icon needs to be dynamic later -->
-                        <div class="menu-item-info">
-                            <div class="menu-item-title">${step.instruction}</div>
-                            <div class="menu-item-subtitle">${step.distance.toFixed(0)} meters</div>
-                        </div>
-                    </div>
-                `).join('');
-                
-                openDrawer(`Route (${duration} min)`, `${distance} km`, stepsHtml);
-            }
-
-            // --- Drawer Management ---
-            const drawer = document.getElementById('drawer');
-            const drawerOverlay = document.getElementById('drawer-overlay');
-            const drawerHeader = document.querySelector('.drawer-header');
-            let isDrawerOpen = false;
-
-            function openDrawer(title, subtitle, contentHtml, onItemClick) {
-                document.getElementById('drawer-title').textContent = title;
-                document.getElementById('drawer-subtitle').textContent = subtitle;
-                const drawerContent = document.getElementById('drawer-content');
-                drawerContent.innerHTML = contentHtml;
-                
-                if (onItemClick) {
-                    drawerContent.querySelectorAll('.clickable').forEach(item => {
-                        item.addEventListener('click', () => onItemClick(item));
+        // --- Scanner Logic ---
+        function onScanSuccess(decodedText, decodedResult) {
+            try {
+                const config = JSON.parse(decodedText);
+                if(config.r && config.k) {
+                    // Stop scanning
+                    html5QrCode.stop().then(() => {
+                         connect(config);
                     });
                 }
-
-                if (!isDrawerOpen) {
-                    drawer.classList.add('open');
-                    drawerOverlay.classList.add('visible');
-                    isDrawerOpen = true;
-                }
+            } catch(e) {
+                alert("Invalid QR Code");
             }
+        }
 
-            function closeDrawer() {
-                if (!isDrawerOpen) return;
-                drawer.classList.remove('open');
-                drawerOverlay.classList.remove('visible');
-                isDrawerOpen = false;
-            }
-            
-            function clearMap() {
-                 if(searchMarker) searchMarker.remove();
-                 if(startMarker) startMarker.remove();
-                 if(endMarker) endMarker.remove();
-                 if(map.getSource('route')) map.getSource('route').setData({type: 'FeatureCollection', features: []});
-                 startCoords = null; endCoords = null;
-                 startInput.value = ''; endInput.value = '';
-                 closeDrawer();
-            }
+        let html5QrCode;
 
-            // --- UPDATED: Event listeners to close the drawer ---
-            drawerOverlay.addEventListener('click', closeDrawer);
-            drawerHeader.addEventListener('click', closeDrawer);
-        });
+        document.getElementById('btn-scan').onclick = () => {
+            html5QrCode = new Html5Qrcode("qr-reader");
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess
+            ).catch(err => {
+                alert("Camera error: " + err);
+            });
+            document.getElementById('btn-scan').style.display = 'none';
+        };
+
+        document.getElementById('btn-manual').onclick = () => {
+            const val = document.getElementById('manual-code').value;
+            try {
+                const config = JSON.parse(val);
+                connect(config);
+            } catch(e) { alert("Invalid JSON code"); }
+        };
+
+        // --- Init ---
+        const saved = localStorage.getItem('waves_client_config');
+        if(saved) {
+            connect(JSON.parse(saved));
+        }
     </script>
 </body>
 </html>
