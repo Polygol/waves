@@ -8,7 +8,6 @@
     <meta name="theme-color" content="#141218">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <script src="https://unpkg.com/qr-scanner@1.4.2/qr-scanner.umd.min.js"></script>
     <script type="module">
         import { joinRoom, selfId } from 'https://esm.sh/trystero@0.15.1/torrent';
         window.Trystero = { joinRoom, selfId };
@@ -61,6 +60,38 @@
         h2 { font-size: 22px; margin: 24px 0 12px 0; font-weight: 400; color: var(--md-sys-color-on-surface); }
         .label-large { font-size: 14px; font-weight: 500; line-height: 20px; }
         .label-medium { font-size: 12px; font-weight: 500; letter-spacing: 0.5px; }
+
+        .code-input {
+            background: #49454F;
+            border: 1px solid #938F99;
+            border-radius: 8px;
+            color: white;
+            font-family: monospace;
+            font-size: 24px;
+            text-align: center;
+            padding: 16px;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin: 20px 0;
+        }
+
+        /* Emoji Grid */
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .emoji-btn {
+            background: #49454F;
+            border: none;
+            border-radius: 16px;
+            font-size: 48px;
+            padding: 20px;
+            cursor: pointer;
+        }
+        .emoji-btn:active { background: #D0BCFF; }
 
         /* Components */
         .card {
@@ -131,14 +162,6 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-        }
-        #qr-reader {
-            width: 100%;
-            height: 250px;
-            background: #000;
-            border-radius: var(--border-radius-lg);
-            overflow: hidden;
-            margin: 20px 0;
         }
 
         /* Dashboard View */
@@ -291,20 +314,22 @@
             <h1 style="margin-top:16px;">Waves (Beta)</h1>
             <p style="opacity: 0.7;">Control your Polygol display</p>
             <p style="opacity: 0.7;">Open Settings > Connections > Show Code to start pairing</p>
+            <p style="opacity: 0.7; text-align:center;">Enter the code shown on the Display</p>
             
-            <div id="qr-reader">
-                <video id="qr-video" style="width: 100%; height: 100%; object-fit: cover;"></video>
-            </div>
+            <input type="text" id="input-code" class="code-input" placeholder="ABC-123" maxlength="7">
             
-            <button class="btn-primary" id="btn-scan">
-                <span class="material-symbols-rounded">qr_code_scanner</span>
-                Scan Code
+            <button class="btn-primary" id="btn-connect" style="margin-top:0;">
+                Connect
             </button>
-            <div style="margin-top: 20px; width: 100%;">
-                 <input type="text" id="manual-code" placeholder="Paste code string" 
-                        style="width: 100%; background: var(--md-sys-color-surface-variant); border: none; padding: 16px; border-radius: 12px; color: white; text-align: center;">
-                 <button class="btn-primary" id="btn-manual" style="background: transparent; border: 1px solid var(--md-sys-color-primary); margin-top: 10px;">Connect Manually</button>
-            </div>
+        </div>
+    </div>
+
+    <!-- 2. VERIFICATION VIEW -->
+    <div id="view-auth" class="view">
+        <div class="setup-content">
+            <h2>Verification</h2>
+            <p style="opacity: 0.7; text-align:center;">Tap the emoji shown on the Display</p>
+            <div id="emoji-container" class="emoji-grid"></div>
         </div>
     </div>
 
@@ -383,10 +408,8 @@
         }
         
         const CONFIG = { appId: 'polygol-connect-v1' };
-        let room, sendAction, broadcastReceiver;
+        let room, sendAction;
         let currentConfig = null;
-        let qrScanner = null;
-        let isScanning = false;
 
         // --- UI Helpers ---
         function showView(id) {
@@ -397,12 +420,13 @@
         function setStatus(connected) {
             const dot = document.getElementById('status-dot');
             const text = document.getElementById('status-text');
-            if(connected) {
+            if (!dot || !text) return;
+            if (connected) {
                 dot.classList.add('connected');
                 text.innerText = "Connected";
-                // Request initial state
+                // Request initial state once connected
                 sendCommand('getApps');
-                sendCommand('requestScreenshot'); 
+                sendCommand('requestScreenshot');
             } else {
                 dot.classList.remove('connected');
                 text.innerText = "Disconnected";
@@ -494,21 +518,69 @@
         // --- Networking ---
         function connect(config) {
             if (!window.Trystero) {
+                // Wait for library
                 window.addEventListener('trystero-ready', () => connect(config), { once: true });
                 return;
             }
 
+            // Case 1: We have a PSK (Restoring session)
+            if (config.k) {
+                startRemoteSession(config);
+            } 
+            // Case 2: No PSK (New connection handshake)
+            else {
+                startHandshake(config.r);
+            }
+        }
+
+        // 1. New Connection Handshake
+        function startHandshake(roomId) {
+            console.log("Starting handshake for room:", roomId);
+            room = window.Trystero.joinRoom(CONFIG, roomId);
+            const [send, get] = room.makeAction('waves-cmd');
+            
+            // Handle Auth Messages
+            get((payload, peerId) => {
+                if (payload.type === 'challenge') {
+                    renderEmojiGrid(payload.options, peerId, send);
+                    showView('view-auth');
+                } 
+                else if (payload.type === 'authorized') {
+                    // Auth Success! Save keys and switch to remote view
+                    const newConfig = { r: roomId, k: payload.psk };
+                    localStorage.setItem('waves_client_config', JSON.stringify(newConfig));
+                    
+                    // Cleanup handshake listeners and start full session
+                    room.leave(); 
+                    setTimeout(() => startRemoteSession(newConfig), 500);
+                } 
+                else if (payload.type === 'auth_failed') {
+                    alert("Incorrect Emoji. Connection refused.");
+                    window.location.reload();
+                }
+            });
+
+            // Send Hello when we find the host
+            room.onPeerJoin(peerId => {
+                console.log("Host found, saying hello...");
+                send({ type: 'hello' }, peerId);
+            });
+        }
+
+        // 2. Authenticated Session (The actual remote control)
+        function startRemoteSession(config) {
             currentConfig = config;
-            localStorage.setItem('waves_client_config', JSON.stringify(config));
             showView('view-remote');
 
+            console.log("Starting secure session...");
             room = window.Trystero.joinRoom(CONFIG, config.r);
             
+            // Setup Channels
             const [sendCmd, getCmd] = room.makeAction('waves-cmd');
             sendAction = sendCmd;
-            
             const [sendUpd, getUpd] = room.makeAction('waves-update');
             
+            // Listen for State Updates (Media, Brightness)
             getUpd((payload) => {
                 if (payload.type === 'mediaUpdate') {
                     updateMediaUI(payload.data.metadata, payload.data.playbackState);
@@ -520,17 +592,14 @@
                 }
             });
             
+            // Listen for Data Responses (Screenshots, App Lists)
             getCmd((payload) => {
                 if (payload.type === 'screenshot') {
-                    // Update the preview in the dashboard
-                    const previewImg = document.getElementById('remote-screen-img');
-                    if(previewImg) {
-                        previewImg.src = payload.data;
-                        previewImg.style.opacity = '1';
-                    }
-                    // Update the modal
                     const modalImg = document.getElementById('screenshot-img');
-                    if(modalImg) modalImg.src = payload.data;
+                    if(modalImg) {
+                        modalImg.src = payload.data;
+                        document.getElementById('screenshot-view').classList.add('open');
+                    }
                 } else if (payload.type === 'appList') {
                     renderAppList(payload.data);
                 }
@@ -538,6 +607,23 @@
 
             room.onPeerJoin(() => setStatus(true));
             room.onPeerLeave(() => setStatus(false));
+        }
+
+        function renderEmojiGrid(options, peerId, sendFunc) {
+            const container = document.getElementById('emoji-container');
+            container.innerHTML = '';
+            
+            options.forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.className = 'emoji-btn';
+                btn.innerText = emoji;
+                btn.onclick = () => {
+                    // Send Answer
+                    sendFunc({ type: 'verify', answer: emoji }, peerId);
+                    container.innerHTML = '<p style="grid-column: span 2; text-align: center; color: white;">Verifying...</p>';
+                };
+                container.appendChild(btn);
+            });
         }
 
         function sendCommand(type, data = null) {
@@ -596,39 +682,29 @@
             }
         }
         
-        document.getElementById('btn-scan').onclick = () => {
-            if (isScanning) return;
-            
-            const videoElem = document.getElementById('qr-video');
-            
-            // Initialize QrScanner
-            qrScanner = new QrScanner(
-                videoElem,
-                result => onScanSuccess(result),
-                { 
-                    returnDetailedScanResult: true,
-                    highlightScanRegion: true,
-                    highlightCodeOutline: true,
-                }
-            );
-        
-            qrScanner.start().then(() => {
-                isScanning = true;
-                document.getElementById('btn-scan').style.display = 'none';
-            }).catch(err => {
-                isScanning = false;
-                document.getElementById('btn-scan').style.display = 'flex';
-                alert("Camera failed: " + err);
-            });
+        document.getElementById('input-code').addEventListener('input', function(e) {
+            this.value = this.value.toUpperCase();
+        });
+
+        document.getElementById('btn-connect').onclick = () => {
+            const code = document.getElementById('input-code').value.trim();
+            if (code.length < 3) {
+                alert("Please enter a valid code");
+                return;
+            }
+            connect({ r: code });
         };
 
-        document.getElementById('btn-manual').onclick = () => {
+        // --- Init ---
+        const saved = localStorage.getItem('waves_client_config');
+        if(saved) {
             try {
-                const config = normalizeConfig(JSON.parse(document.getElementById('manual-code').value));
-                if(config) connect(config);
-                else alert("Invalid Code");
-            } catch(e) { alert("Invalid JSON"); }
-        };
+                const config = JSON.parse(saved);
+                if(config.r && config.k) connect(config);
+            } catch(e) {
+                console.error("Bad config", e);
+            }
+        }
 
         // Auto Connect
         const saved = localStorage.getItem('waves_client_config');
