@@ -3,128 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Waves Remote</title>
-    <meta name="theme-color" content="#000000">
+    <title>Waves</title>
+    <meta name="theme-color" content="#141218">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- Dependencies -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
-    
-    <!-- Trystero Module -->
     <script type="module">
         import { joinRoom, selfId } from 'https://esm.sh/trystero@0.15.1/torrent';
         window.Trystero = { joinRoom, selfId };
         window.dispatchEvent(new Event('trystero-ready'));
     </script>
 
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet">
 
     <style>
+        /* MD3 Token-ish Variables */
         :root {
-            --bg: #000000;
-            --card-bg: #1c1c1e;
-            --accent: #0a84ff;
-            --text: #ffffff;
-            --text-sec: #8e8e93;
+            --md-sys-color-background: #141218;
+            --md-sys-color-on-background: #E6E1E5;
+            --md-sys-color-surface: #1D1B20;
+            --md-sys-color-surface-variant: #49454F;
+            --md-sys-color-on-surface: #E6E1E5;
+            --md-sys-color-on-surface-variant: #CAC4D0;
+            --md-sys-color-primary: #D0BCFF;
+            --md-sys-color-on-primary: #381E72;
+            --md-sys-color-primary-container: #4F378B;
+            --md-sys-color-on-primary-container: #EADDFF;
+            --md-sys-color-secondary-container: #4A4458;
+            --md-sys-color-on-secondary-container: #E8DEF8;
+            
+            --border-radius-lg: 28px;
+            --border-radius-md: 16px;
+            --border-radius-sm: 12px;
         }
-        
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         
         body {
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', sans-serif;
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-background);
+            font-family: 'Roboto', sans-serif;
             margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
+            padding: 0;
             height: 100vh;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Views */
-        .view { display: none; height: 100%; flex-direction: column; }
+        /* State Views */
+        .view { display: none; height: 100%; flex-direction: column; padding: 16px; overflow-y: auto; }
         .view.active { display: flex; }
 
+        /* Typography */
+        h1 { font-size: 32px; margin: 0 0 16px 0; font-weight: 400; }
+        h2 { font-size: 22px; margin: 24px 0 12px 0; font-weight: 400; color: var(--md-sys-color-on-surface); }
+        .label-large { font-size: 14px; font-weight: 500; line-height: 20px; }
+        .label-medium { font-size: 12px; font-weight: 500; letter-spacing: 0.5px; }
+
+        /* Components */
+        .card {
+            background: var(--md-sys-color-surface);
+            border-radius: var(--border-radius-lg);
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .filled-card {
+            background: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface);
+            border-radius: var(--border-radius-md);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+
+        .btn-primary {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border-radius: 100px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 16px;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--md-sys-color-on-surface-variant);
+            padding: 8px;
+            border-radius: 50%;
+        }
+        .icon-btn:active { background: rgba(255,255,255,0.1); }
+
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            border: none;
+        }
+
         /* Setup View */
-        .setup-container {
+        .setup-content {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 20px;
+            text-align: center;
         }
-        
-        #qr-reader { 
-            width: 100%; 
-            min-height: 250px; /* Important: Reserve space for camera */
-            border-radius: 20px; 
-            overflow: hidden; 
-            border: 1px solid #333; 
-            background: #111;
-        }
-        
-        .btn {
-            background: var(--card-bg);
-            color: var(--accent);
-            border: none;
-            padding: 16px 32px;
-            border-radius: 16px;
-            font-size: 18px;
-            font-weight: 600;
+        #qr-reader {
             width: 100%;
-            cursor: pointer;
-            transition: transform 0.1s;
+            height: 250px;
+            background: #000;
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            margin: 20px 0;
         }
-        .btn:active { transform: scale(0.98); filter: brightness(1.2); }
-        .btn.primary { background: var(--accent); color: white; }
 
-        /* Remote View */
-        .remote-header {
+        /* Dashboard View */
+        .top-app-bar {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+            padding: 8px 0;
+            margin-bottom: 8px;
         }
         
-        .status-dot {
-            width: 10px; height: 10px;
-            background: #333;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-        .status-dot.connected { background: #32d74b; box-shadow: 0 0 10px #32d74b; }
-
-        .preview-card {
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 10px;
-            margin-bottom: 20px;
-            position: relative;
-            min-height: 200px;
+        .connection-status {
             display: flex;
-            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: #FF5449;
+        }
+        .status-dot.connected { background: #B6F2AF; }
+
+        /* Media Player */
+        .media-player {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border-radius: 28px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 16px;
+        }
+        .album-art {
+            width: 120px; height: 120px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+            object-fit: cover;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .track-info h3 { margin: 0; font-size: 20px; }
+        .track-info p { margin: 4px 0 0 0; opacity: 0.8; font-size: 14px; }
+        .media-controls {
+            display: flex;
+            gap: 24px;
             align-items: center;
         }
-        
-        #remote-screen-img {
-            width: 100%;
-            border-radius: 16px;
-            opacity: 0.5;
-            transition: opacity 0.3s;
+        .play-pause {
+            background: var(--md-sys-color-on-primary-container);
+            color: var(--md-sys-color-primary-container);
+            width: 64px; height: 64px;
+            border-radius: 32px;
+            display: flex; align-items: center; justify-content: center;
+            border: none;
         }
         
-        .control-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .control-card {
-            background: var(--card-bg);
+        /* Quick Actions Grid */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .action-card {
+            background: var(--md-sys-color-surface-variant);
             border-radius: 20px;
             padding: 20px;
             display: flex;
@@ -132,124 +212,175 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-        }
-
-        .media-row {
-            grid-column: span 2;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 40px;
-        }
-
-        .icon-btn {
-            background: none;
+            color: var(--md-sys-color-on-surface);
             border: none;
-            color: white;
-            padding: 10px;
         }
-        .icon-btn span { font-size: 32px; }
-        .play-btn span { font-size: 48px; }
+        .action-card:active { background: #5f5b66; }
 
+        /* Brightness Slider */
         .slider-container {
-            grid-column: span 2;
+            background: var(--md-sys-color-surface-variant);
+            border-radius: 100px;
+            padding: 16px 24px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            padding: 10px;
+            gap: 16px;
+            margin-top: 12px;
         }
-        
         input[type=range] {
             flex: 1;
-            accent-color: var(--accent);
-            height: 6px;
-            border-radius: 3px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            appearance: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px; height: 20px;
+            background: var(--md-sys-color-primary);
+            border-radius: 50%;
+        }
+
+        /* App Drawer */
+        .app-drawer-sheet {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: var(--md-sys-color-surface);
+            border-radius: 28px 28px 0 0;
+            padding: 24px;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+            z-index: 100;
+        }
+        .app-drawer-sheet.open { transform: translateY(0); }
+        
+        .app-list-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .app-list-item img { width: 40px; height: 40px; border-radius: 12px; }
+
+        .screenshot-modal {
+            position: fixed; inset: 0;
+            background: #000;
+            display: none;
+            align-items: center; justify-content: center;
+            z-index: 200;
+        }
+        .screenshot-modal.open { display: flex; }
+        .screenshot-modal img { max-width: 100%; max-height: 100%; }
+        .screenshot-modal button {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white; border: none; padding: 8px; border-radius: 50%;
         }
 
     </style>
 </head>
 <body>
 
-    <!-- 1. SETUP VIEW -->
+    <!-- SETUP VIEW -->
     <div id="view-setup" class="view active">
-        <div class="setup-container">
-            <span class="material-symbols-rounded" style="font-size: 64px; color: var(--accent);">waves</span>
-            <h1>Connect to Polygol</h1>
-            <p style="color: var(--text-sec); text-align: center;">Scan the QR code found in Polygol Settings > Connect</p>
+        <div class="setup-content">
+            <span class="material-symbols-rounded" style="font-size: 64px; color: var(--md-sys-color-primary);">waves</span>
+            <h1 style="margin-top:16px;">Waves</h1>
+            <p style="opacity: 0.7;">Control your Polygol display</p>
             
             <div id="qr-reader"></div>
             
-            <button class="btn primary" id="btn-scan">Scan QR Code</button>
-            <input type="text" id="manual-code" placeholder="Or paste code here" style="background: #333; border:none; padding: 15px; border-radius: 10px; color: white; width: 100%; text-align: center;">
-            <button class="btn" id="btn-manual">Connect Manually</button>
+            <button class="btn-primary" id="btn-scan">
+                <span class="material-symbols-rounded">qr_code_scanner</span>
+                Scan Code
+            </button>
+            <div style="margin-top: 20px; width: 100%;">
+                 <input type="text" id="manual-code" placeholder="Paste code string" 
+                        style="width: 100%; background: var(--md-sys-color-surface-variant); border: none; padding: 16px; border-radius: 12px; color: white; text-align: center;">
+                 <button class="btn-primary" id="btn-manual" style="background: transparent; border: 1px solid var(--md-sys-color-primary); margin-top: 10px;">Connect Manually</button>
+            </div>
         </div>
     </div>
 
-    <!-- 2. REMOTE VIEW -->
+    <!-- REMOTE DASHBOARD VIEW -->
     <div id="view-remote" class="view">
-        <div class="remote-header">
-            <div style="display: flex; align-items: center;">
+        <div class="top-app-bar">
+            <div class="connection-status">
                 <div id="status-dot" class="status-dot"></div>
-                <span id="status-text" style="font-weight: 600;">Connecting...</span>
+                <span id="status-text">Connecting...</span>
             </div>
-            <button class="icon-btn" onclick="disconnect()"><span class="material-symbols-rounded">logout</span></button>
+            <button class="icon-btn" onclick="disconnect()">
+                <span class="material-symbols-rounded">logout</span>
+            </button>
         </div>
 
-        <!-- Screenshot Preview -->
-        <div class="preview-card" onclick="requestScreenshot()">
-            <img id="remote-screen-img" src="" alt="Tap to refresh">
-            <span style="position: absolute; color: white; font-size: 12px; bottom: 15px; pointer-events: none;">Tap to Refresh</span>
+        <!-- Media Player -->
+        <div class="media-player">
+            <img id="media-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="album-art">
+            <div class="track-info">
+                <h3 id="media-title">No Media</h3>
+                <p id="media-artist">Not Playing</p>
+            </div>
+            <div class="media-controls">
+                <button class="icon-btn" onclick="sendMedia('prev')"><span class="material-symbols-rounded" style="font-size: 32px;">skip_previous</span></button>
+                <button class="play-pause" onclick="sendMedia('playPause')"><span class="material-symbols-rounded" style="font-size: 36px;">play_arrow</span></button>
+                <button class="icon-btn" onclick="sendMedia('next')"><span class="material-symbols-rounded" style="font-size: 32px;">skip_next</span></button>
+            </div>
         </div>
 
-        <div class="control-grid">
-            <!-- Power -->
-            <div class="control-card" onclick="sendCommand('blackout')">
-                <span class="material-symbols-rounded" style="font-size: 32px; color: #ff453a;">power_settings_new</span>
-                <span>Sleep</span>
-            </div>
-            <div class="control-card" onclick="sendCommand('wake')">
-                <span class="material-symbols-rounded" style="font-size: 32px; color: #32d74b;">wb_sunny</span>
-                <span>Wake</span>
-            </div>
+        <h2>Controls</h2>
+        <div class="grid-2">
+            <button class="action-card" onclick="sendCommand('blackout')">
+                <span class="material-symbols-rounded" style="font-size: 32px;">power_settings_new</span>
+                <span class="label-large">Sleep</span>
+            </button>
+            <button class="action-card" onclick="sendCommand('wake')">
+                <span class="material-symbols-rounded" style="font-size: 32px;">wb_sunny</span>
+                <span class="label-large">Wake</span>
+            </button>
+             <button class="action-card" onclick="requestScreenshot()">
+                <span class="material-symbols-rounded" style="font-size: 32px;">screenshot_monitor</span>
+                <span class="label-large">View</span>
+            </button>
+             <button class="action-card" onclick="toggleAppDrawer()">
+                <span class="material-symbols-rounded" style="font-size: 32px;">apps</span>
+                <span class="label-large">Apps</span>
+            </button>
+        </div>
 
-            <!-- Media -->
-            <div class="control-card media-row">
-                <button class="icon-btn" onclick="sendMedia('prev')"><span class="material-symbols-rounded">skip_previous</span></button>
-                <button class="icon-btn play-btn" onclick="sendMedia('playPause')"><span class="material-symbols-rounded">play_circle</span></button>
-                <button class="icon-btn" onclick="sendMedia('next')"><span class="material-symbols-rounded">skip_next</span></button>
-            </div>
-
-            <!-- Brightness -->
-            <div class="control-card slider-container">
-                <span class="material-symbols-rounded">brightness_low</span>
-                <input type="range" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
-                <span class="material-symbols-rounded">brightness_high</span>
-            </div>
+        <h2>Brightness</h2>
+        <div class="slider-container">
+            <span class="material-symbols-rounded">brightness_5</span>
+            <input type="range" id="remote-brightness" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
         </div>
     </div>
 
-<script>
+    <!-- App Drawer Sheet -->
+    <div id="app-drawer-sheet" class="app-drawer-sheet">
+        <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
+            <h2>Applications</h2>
+            <button class="icon-btn" onclick="toggleAppDrawer()"><span class="material-symbols-rounded">close</span></button>
+        </div>
+        <div id="app-list-container"></div>
+    </div>
+
+    <!-- Screenshot Modal -->
+    <div id="screenshot-view" class="screenshot-modal">
+        <button onclick="this.parentElement.classList.remove('open')"><span class="material-symbols-rounded">close</span></button>
+        <img id="screenshot-img" src="">
+    </div>
+
+    <script>
         const CONFIG = { appId: 'polygol-connect-v1' };
-        let room, sendAction;
+        let room, sendAction, broadcastReceiver;
         let currentConfig = null;
         let html5QrCode = null;
         let isScanning = false;
 
-        // --- Helper: Normalize Config Keys ---
-        function normalizeConfig(raw) {
-            if (!raw) return null;
-            // Handle Host format (roomId, psk) -> Client format (r, k)
-            if (raw.roomId && raw.psk) {
-                return { r: raw.roomId, k: raw.psk };
-            }
-            // Handle Legacy/Short format
-            if (raw.r && raw.k) {
-                return raw;
-            }
-            return null;
-        }
-
-        // --- UI Logic ---
+        // --- UI Helpers ---
         function showView(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -261,17 +392,64 @@
             if(connected) {
                 dot.classList.add('connected');
                 text.innerText = "Connected";
-                requestScreenshot(); 
+                // Ask for initial data
+                sendCommand('getApps');
             } else {
                 dot.classList.remove('connected');
                 text.innerText = "Disconnected";
             }
         }
 
-        // --- Connection Logic ---
+        function toggleAppDrawer() {
+            document.getElementById('app-drawer-sheet').classList.toggle('open');
+        }
+
+        function updateMediaUI(metadata) {
+            if (!metadata) return;
+            document.getElementById('media-title').innerText = metadata.title || "Unknown";
+            document.getElementById('media-artist').innerText = metadata.artist || "Unknown";
+            
+            // Handle Artwork
+            if (metadata.artwork && metadata.artwork.length > 0) {
+                document.getElementById('media-art').src = metadata.artwork[0].src;
+            }
+        }
+
+        function updateBrightnessUI(value) {
+            document.getElementById('remote-brightness').value = value;
+        }
+
+        function renderAppList(apps) {
+            const container = document.getElementById('app-list-container');
+            container.innerHTML = '';
+            apps.forEach(app => {
+                const div = document.createElement('div');
+                div.className = 'app-list-item';
+                div.onclick = () => {
+                    sendCommand('launchApp', { url: app.url });
+                    toggleAppDrawer(); // Close drawer
+                };
+                
+                // Fix icon path if it's relative
+                let iconSrc = app.icon;
+                if (iconSrc && !iconSrc.startsWith('http') && !iconSrc.startsWith('data:')) {
+                     // We don't know the host IP/domain easily here unless we pass it.
+                     // For now, let's assume standard relative path issues might break icons 
+                     // unless they are data URIs or fully qualified.
+                     // Strategy: Just show name if icon breaks, or send full URL from host.
+                }
+
+                div.innerHTML = `
+                    <span class="material-symbols-rounded" style="font-size:32px; opacity:0.7;">apps</span>
+                    <span style="font-size:16px; font-weight:500;">${app.name}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // --- Networking ---
         function connect(config) {
             if (!window.Trystero) {
-                document.getElementById('status-text').innerText = "Loading Libraries...";
                 window.addEventListener('trystero-ready', () => connect(config), { once: true });
                 return;
             }
@@ -280,25 +458,36 @@
             localStorage.setItem('waves_client_config', JSON.stringify(config));
             showView('view-remote');
 
-            console.log("Joining room:", config.r);
             room = window.Trystero.joinRoom(CONFIG, config.r);
-            const [send, get] = room.makeAction('waves-cmd');
-            sendAction = send;
-
-            get((payload, peerId) => {
+            
+            // Command Channel (Outgoing)
+            const [sendCmd, getCmd] = room.makeAction('waves-cmd');
+            sendAction = sendCmd;
+            
+            // Update Channel (Incoming)
+            const [sendUpd, getUpd] = room.makeAction('waves-update');
+            
+            getUpd((payload) => {
+                if (payload.type === 'mediaUpdate') {
+                    updateMediaUI(payload.data.metadata);
+                } else if (payload.type === 'state') {
+                    updateBrightnessUI(payload.data.brightness);
+                    if(payload.data.media) updateMediaUI(payload.data.media);
+                }
+            });
+            
+            // Handle direct responses (like screenshots or app lists)
+            getCmd((payload) => {
                 if (payload.type === 'screenshot') {
-                    document.getElementById('remote-screen-img').src = payload.data;
-                    document.getElementById('remote-screen-img').style.opacity = '1';
+                    document.getElementById('screenshot-img').src = payload.data;
+                    document.getElementById('screenshot-view').classList.add('open');
+                } else if (payload.type === 'appList') {
+                    renderAppList(payload.data);
                 }
             });
 
             room.onPeerJoin(() => setStatus(true));
             room.onPeerLeave(() => setStatus(false));
-        }
-
-        function disconnect() {
-            localStorage.removeItem('waves_client_config');
-            window.location.reload();
         }
 
         function sendCommand(type, data = null) {
@@ -315,85 +504,60 @@
         }
 
         function requestScreenshot() {
-            document.getElementById('remote-screen-img').style.opacity = '0.3';
             sendCommand('requestScreenshot');
         }
+        
+        function disconnect() {
+            localStorage.removeItem('waves_client_config');
+            window.location.reload();
+        }
 
-        // --- Scanner Logic ---
-        function onScanSuccess(decodedText, decodedResult) {
+        // --- QR Logic ---
+        function normalizeConfig(raw) {
+            if (!raw) return null;
+            if (raw.roomId && raw.psk) return { r: raw.roomId, k: raw.psk };
+            if (raw.r && raw.k) return raw;
+            return null;
+        }
+
+        function onScanSuccess(decodedText) {
             if (!isScanning) return;
-
             try {
-                const rawConfig = JSON.parse(decodedText);
-                const config = normalizeConfig(rawConfig);
-                
+                const config = normalizeConfig(JSON.parse(decodedText));
                 if(config) {
-                    console.log("Valid code found, connecting...");
-                    isScanning = false; 
+                    isScanning = false;
+                    if(html5QrCode) html5QrCode.stop().catch(()=>{});
+                    document.getElementById('qr-reader').innerHTML = "";
                     connect(config);
-
-                    if(html5QrCode) {
-                        html5QrCode.stop().then(() => {
-                            document.getElementById('qr-reader').innerHTML = "";
-                        }).catch(err => {
-                            console.warn("Camera stop warning:", err);
-                            document.getElementById('qr-reader').innerHTML = "";
-                        });
-                    }
                 }
-            } catch(e) {
-                console.log("Ignored invalid data:", decodedText);
-            }
+            } catch(e) {}
         }
 
         document.getElementById('btn-scan').onclick = () => {
             if (isScanning) return;
-            
             html5QrCode = new Html5Qrcode("qr-reader");
             isScanning = true;
             document.getElementById('btn-scan').style.display = 'none';
-            
-            const qrBoxSize = Math.min(window.innerWidth - 50, 250);
-
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: qrBoxSize, height: qrBoxSize } },
-                onScanSuccess,
-                () => {}
-            ).catch(err => {
-                isScanning = false;
-                document.getElementById('btn-scan').style.display = 'block';
-                alert("Camera failed: " + err);
-            });
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess)
+                .catch(() => {
+                    isScanning = false;
+                    document.getElementById('btn-scan').style.display = 'flex';
+                    alert("Camera access failed");
+                });
         };
 
         document.getElementById('btn-manual').onclick = () => {
-            const val = document.getElementById('manual-code').value;
             try {
-                const rawConfig = JSON.parse(val);
-                const config = normalizeConfig(rawConfig);
-                
-                if (config) {
-                    connect(config);
-                } else {
-                    alert("Invalid Code Format: Missing roomId or psk");
-                }
-            } catch(e) { 
-                alert("Invalid JSON: Ensure you copied the full code including { }"); 
-            }
+                const config = normalizeConfig(JSON.parse(document.getElementById('manual-code').value));
+                if(config) connect(config);
+                else alert("Invalid Code");
+            } catch(e) { alert("Invalid JSON"); }
         };
 
-        // --- Init ---
+        // Auto Connect
         const saved = localStorage.getItem('waves_client_config');
-        if(saved) {
-            try {
-                const raw = JSON.parse(saved);
-                const config = normalizeConfig(raw);
-                if(config) connect(config);
-            } catch(e) {
-                console.error("Bad saved config", e);
-            }
-        }
+        if(saved) connect(JSON.parse(saved));
+
     </script>
 </body>
 </html>
