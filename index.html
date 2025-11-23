@@ -235,6 +235,20 @@
         let html5QrCode = null;
         let isScanning = false;
 
+        // --- Helper: Normalize Config Keys ---
+        function normalizeConfig(raw) {
+            if (!raw) return null;
+            // Handle Host format (roomId, psk) -> Client format (r, k)
+            if (raw.roomId && raw.psk) {
+                return { r: raw.roomId, k: raw.psk };
+            }
+            // Handle Legacy/Short format
+            if (raw.r && raw.k) {
+                return raw;
+            }
+            return null;
+        }
+
         // --- UI Logic ---
         function showView(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -247,7 +261,7 @@
             if(connected) {
                 dot.classList.add('connected');
                 text.innerText = "Connected";
-                requestScreenshot(); // Get initial view
+                requestScreenshot(); 
             } else {
                 dot.classList.remove('connected');
                 text.innerText = "Disconnected";
@@ -256,7 +270,6 @@
 
         // --- Connection Logic ---
         function connect(config) {
-            // Wait for Trystero if it's not loaded yet
             if (!window.Trystero) {
                 document.getElementById('status-text').innerText = "Loading Libraries...";
                 window.addEventListener('trystero-ready', () => connect(config), { once: true });
@@ -267,11 +280,11 @@
             localStorage.setItem('waves_client_config', JSON.stringify(config));
             showView('view-remote');
 
+            console.log("Joining room:", config.r);
             room = window.Trystero.joinRoom(CONFIG, config.r);
             const [send, get] = room.makeAction('waves-cmd');
             sendAction = send;
 
-            // Handle incoming (Screenshots)
             get((payload, peerId) => {
                 if (payload.type === 'screenshot') {
                     document.getElementById('remote-screen-img').src = payload.data;
@@ -290,7 +303,6 @@
 
         function sendCommand(type, data = null) {
             if(!sendAction) return;
-            // Standard payload with Auth Key
             sendAction({
                 auth: currentConfig.k,
                 type: type,
@@ -303,7 +315,7 @@
         }
 
         function requestScreenshot() {
-            document.getElementById('remote-screen-img').style.opacity = '0.3'; // Visual feedback
+            document.getElementById('remote-screen-img').style.opacity = '0.3';
             sendCommand('requestScreenshot');
         }
 
@@ -312,33 +324,25 @@
             if (!isScanning) return;
 
             try {
-                const config = JSON.parse(decodedText);
+                const rawConfig = JSON.parse(decodedText);
+                const config = normalizeConfig(rawConfig);
                 
-                // Check if it looks like a valid Waves config
-                if(config.r && config.k) {
+                if(config) {
                     console.log("Valid code found, connecting...");
-                    
-                    // 1. Lock scanning to prevent duplicates
                     isScanning = false; 
-                    
-                    // 2. Connect IMMEDIATELY (Don't wait for camera to stop)
                     connect(config);
 
-                    // 3. Stop camera in background
                     if(html5QrCode) {
                         html5QrCode.stop().then(() => {
                             document.getElementById('qr-reader').innerHTML = "";
                         }).catch(err => {
-                            console.warn("Camera stop warning (ignored):", err);
+                            console.warn("Camera stop warning:", err);
                             document.getElementById('qr-reader').innerHTML = "";
                         });
                     }
                 }
             } catch(e) {
-                // Invalid JSON. 
-                // We do NOT stop scanning here, so the user can try again 
-                // without tapping the button again.
-                console.log("Ignored invalid QR code:", decodedText);
+                console.log("Ignored invalid data:", decodedText);
             }
         }
 
@@ -349,14 +353,13 @@
             isScanning = true;
             document.getElementById('btn-scan').style.display = 'none';
             
-            // Use responsive box size based on viewport
             const qrBoxSize = Math.min(window.innerWidth - 50, 250);
 
             html5QrCode.start(
                 { facingMode: "environment" }, 
                 { fps: 10, qrbox: { width: qrBoxSize, height: qrBoxSize } },
                 onScanSuccess,
-                (errorMessage) => { /* Ignore frame errors */ }
+                () => {}
             ).catch(err => {
                 isScanning = false;
                 document.getElementById('btn-scan').style.display = 'block';
@@ -367,15 +370,29 @@
         document.getElementById('btn-manual').onclick = () => {
             const val = document.getElementById('manual-code').value;
             try {
-                const config = JSON.parse(val);
-                connect(config);
-            } catch(e) { alert("Invalid JSON code"); }
+                const rawConfig = JSON.parse(val);
+                const config = normalizeConfig(rawConfig);
+                
+                if (config) {
+                    connect(config);
+                } else {
+                    alert("Invalid Code Format: Missing roomId or psk");
+                }
+            } catch(e) { 
+                alert("Invalid JSON: Ensure you copied the full code including { }"); 
+            }
         };
 
         // --- Init ---
         const saved = localStorage.getItem('waves_client_config');
         if(saved) {
-            connect(JSON.parse(saved));
+            try {
+                const raw = JSON.parse(saved);
+                const config = normalizeConfig(raw);
+                if(config) connect(config);
+            } catch(e) {
+                console.error("Bad saved config", e);
+            }
         }
     </script>
 </body>
