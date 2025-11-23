@@ -316,7 +316,7 @@
             <p style="opacity: 0.7;">Open Settings > Connections > Show Code to start pairing</p>
             <p style="opacity: 0.7; text-align:center;">Enter the code shown on the Display</p>
             
-            <input type="text" id="input-code" class="code-input" placeholder="ABC-123" maxlength="7">
+            <input type="text" id="input-code" class="code-input" placeholder="ABCD1234" maxlength="8">
             
             <button class="btn-primary" id="btn-connect" style="margin-top:0;">
                 Connect
@@ -685,11 +685,12 @@
         document.getElementById('input-code').addEventListener('input', function(e) {
             this.value = this.value.toUpperCase();
         });
-
+        
         document.getElementById('btn-connect').onclick = () => {
             const code = document.getElementById('input-code').value.trim();
-            if (code.length < 3) {
-                alert("Please enter a valid code");
+            // Allow code length of 8
+            if (code.length < 8) {
+                alert("Please enter a valid 8-character code");
                 return;
             }
             connect({ r: code });
