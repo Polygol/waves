@@ -376,6 +376,11 @@
     </div>
 
     <script>
+        // Manually set the worker path to the CDN URL to prevent CORS/resolution errors
+        if (typeof QrScanner !== 'undefined') {
+            QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
+        }
+        
         const CONFIG = { appId: 'polygol-connect-v1' };
         let room, sendAction, broadcastReceiver;
         let currentConfig = null;
