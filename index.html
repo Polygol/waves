@@ -385,15 +385,16 @@
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
-
+        
         function setStatus(connected) {
             const dot = document.getElementById('status-dot');
             const text = document.getElementById('status-text');
             if(connected) {
                 dot.classList.add('connected');
                 text.innerText = "Connected";
-                // Ask for initial data
+                // Request initial state
                 sendCommand('getApps');
+                sendCommand('requestScreenshot'); 
             } else {
                 dot.classList.remove('connected');
                 text.innerText = "Disconnected";
@@ -419,15 +420,16 @@
         }
 
         function updateBrightnessUI(value) {
-            document.getElementById('remote-brightness').value = value;
+            const slider = document.getElementById('remote-brightness');
+            if(slider) slider.value = value;
         }
-
+        
         function renderAppList(apps) {
             const container = document.getElementById('app-list-container');
             container.innerHTML = '';
             
-            if (!apps || apps.length === 0) {
-                container.innerHTML = '<p style="opacity:0.5; text-align:center;">No apps found.</p>';
+            if(!apps || apps.length === 0) {
+                container.innerHTML = '<p style="text-align:center; opacity:0.5; padding:20px;">No apps found on host.</p>';
                 return;
             }
 
@@ -439,7 +441,6 @@
                     toggleAppDrawer(); 
                 };
                 
-                // Use the absolute URL provided by the host
                 const imgHtml = app.icon 
                     ? `<img src="${app.icon}" onerror="this.style.display='none'">` 
                     : '<span class="material-symbols-rounded" style="font-size:32px; opacity:0.7;">apps</span>';
@@ -465,11 +466,9 @@
 
             room = window.Trystero.joinRoom(CONFIG, config.r);
             
-            // Command Channel (Outgoing)
             const [sendCmd, getCmd] = room.makeAction('waves-cmd');
             sendAction = sendCmd;
             
-            // Update Channel (Incoming)
             const [sendUpd, getUpd] = room.makeAction('waves-update');
             
             getUpd((payload) => {
@@ -481,11 +480,17 @@
                 }
             });
             
-            // Handle direct responses (like screenshots or app lists)
             getCmd((payload) => {
                 if (payload.type === 'screenshot') {
-                    document.getElementById('screenshot-img').src = payload.data;
-                    document.getElementById('screenshot-view').classList.add('open');
+                    // Update the preview in the dashboard
+                    const previewImg = document.getElementById('remote-screen-img');
+                    if(previewImg) {
+                        previewImg.src = payload.data;
+                        previewImg.style.opacity = '1';
+                    }
+                    // Update the modal
+                    const modalImg = document.getElementById('screenshot-img');
+                    if(modalImg) modalImg.src = payload.data;
                 } else if (payload.type === 'appList') {
                     renderAppList(payload.data);
                 }
@@ -505,13 +510,13 @@
         }
 
         function sendMedia(action) {
+            // Send the action string directly as data, Host interprets it
             sendCommand('media', { action: action });
         }
-        
+
         function requestScreenshot() {
-            // Visual feedback on the button or image could be added here
             const img = document.getElementById('remote-screen-img');
-            if(img) img.style.opacity = '0.5';
+            if(img) img.style.opacity = '0.5'; // Visual feedback
             sendCommand('requestScreenshot');
         }
         
