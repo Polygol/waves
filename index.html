@@ -11,7 +11,7 @@
     <!-- Dependencies -->
     <script type="module">
         import { joinRoom, selfId } from 'https://esm.sh/trystero@0.15.1/torrent';
-        window.Trystero = { joinRoom, selfId, getPeers };
+        window.Trystero = { joinRoom, selfId };
         window.dispatchEvent(new Event('trystero-ready'));
     </script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
