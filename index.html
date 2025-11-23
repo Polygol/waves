@@ -333,13 +333,13 @@
 
         <h2>Controls</h2>
         <div class="grid-2">
-            <button class="action-card" onclick="sendCommand('blackout')">
+            <button class="action-card" onclick="sendCommand('toggleSleep')">
                 <span class="material-symbols-rounded" style="font-size: 32px;">power_settings_new</span>
-                <span class="label-large">Sleep</span>
+                <span class="label-large">Power</span>
             </button>
-            <button class="action-card" onclick="sendCommand('wake')">
-                <span class="material-symbols-rounded" style="font-size: 32px;">wb_sunny</span>
-                <span class="label-large">Wake</span>
+            <button class="action-card" onclick="sendCommand('home')">
+                <span class="material-symbols-rounded" style="font-size: 32px;">home</span>
+                <span class="label-large">Home</span>
             </button>
              <button class="action-card" onclick="requestScreenshot()">
                 <span class="material-symbols-rounded" style="font-size: 32px;">screenshot_monitor</span>
@@ -409,9 +409,12 @@
             document.getElementById('media-title').innerText = metadata.title || "Unknown";
             document.getElementById('media-artist').innerText = metadata.artist || "Unknown";
             
-            // Handle Artwork
+            const artImg = document.getElementById('media-art');
             if (metadata.artwork && metadata.artwork.length > 0) {
-                document.getElementById('media-art').src = metadata.artwork[0].src;
+                artImg.src = metadata.artwork[0].src;
+            } else {
+                // Reset to placeholder if no artwork
+                artImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
             }
         }
 
@@ -422,25 +425,27 @@
         function renderAppList(apps) {
             const container = document.getElementById('app-list-container');
             container.innerHTML = '';
+            
+            if (!apps || apps.length === 0) {
+                container.innerHTML = '<p style="opacity:0.5; text-align:center;">No apps found.</p>';
+                return;
+            }
+
             apps.forEach(app => {
                 const div = document.createElement('div');
                 div.className = 'app-list-item';
                 div.onclick = () => {
                     sendCommand('launchApp', { url: app.url });
-                    toggleAppDrawer(); // Close drawer
+                    toggleAppDrawer(); 
                 };
                 
-                // Fix icon path if it's relative
-                let iconSrc = app.icon;
-                if (iconSrc && !iconSrc.startsWith('http') && !iconSrc.startsWith('data:')) {
-                     // We don't know the host IP/domain easily here unless we pass it.
-                     // For now, let's assume standard relative path issues might break icons 
-                     // unless they are data URIs or fully qualified.
-                     // Strategy: Just show name if icon breaks, or send full URL from host.
-                }
+                // Use the absolute URL provided by the host
+                const imgHtml = app.icon 
+                    ? `<img src="${app.icon}" onerror="this.style.display='none'">` 
+                    : '<span class="material-symbols-rounded" style="font-size:32px; opacity:0.7;">apps</span>';
 
                 div.innerHTML = `
-                    <span class="material-symbols-rounded" style="font-size:32px; opacity:0.7;">apps</span>
+                    ${imgHtml}
                     <span style="font-size:16px; font-weight:500;">${app.name}</span>
                 `;
                 container.appendChild(div);
@@ -502,8 +507,11 @@
         function sendMedia(action) {
             sendCommand('media', { action: action });
         }
-
+        
         function requestScreenshot() {
+            // Visual feedback on the button or image could be added here
+            const img = document.getElementById('remote-screen-img');
+            if(img) img.style.opacity = '0.5';
             sendCommand('requestScreenshot');
         }
         
