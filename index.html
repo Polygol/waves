@@ -407,17 +407,47 @@
             document.getElementById('app-drawer-sheet').classList.toggle('open');
         }
 
-        function updateMediaUI(metadata) {
+        function updateMediaUI(metadata, playbackState) {
             if (!metadata) return;
+            
+            // Update Text
             document.getElementById('media-title').innerText = metadata.title || "Unknown";
             document.getElementById('media-artist').innerText = metadata.artist || "Unknown";
             
+            // Update Artwork
             const artImg = document.getElementById('media-art');
+            let artSrc = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
             if (metadata.artwork && metadata.artwork.length > 0) {
-                artImg.src = metadata.artwork[0].src;
+                artSrc = metadata.artwork[0].src;
+            }
+            artImg.src = artSrc;
+    
+            // Update Play/Pause Button Icon
+            const playBtnIcon = document.querySelector('.play-pause span');
+            if (playbackState === 'playing') {
+                playBtnIcon.innerText = 'pause';
             } else {
-                // Reset to placeholder if no artwork
-                artImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+                playBtnIcon.innerText = 'play_arrow';
+            }
+    
+            // --- Native Media Session API (Lock Screen Controls) ---
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: metadata.title || "Polygol Media",
+                    artist: metadata.artist || "Remote Control",
+                    artwork: [
+                        { src: artSrc, sizes: '512x512', type: 'image/png' }
+                    ]
+                });
+    
+                // Update playback state for OS
+                navigator.mediaSession.playbackState = playbackState || 'none';
+    
+                // Bind handlers (only need to do this once, but doing it here ensures data availability)
+                navigator.mediaSession.setActionHandler('play', () => sendMedia('playPause'));
+                navigator.mediaSession.setActionHandler('pause', () => sendMedia('playPause'));
+                navigator.mediaSession.setActionHandler('previoustrack', () => sendMedia('prev'));
+                navigator.mediaSession.setActionHandler('nexttrack', () => sendMedia('next'));
             }
         }
 
@@ -475,10 +505,12 @@
             
             getUpd((payload) => {
                 if (payload.type === 'mediaUpdate') {
-                    updateMediaUI(payload.data.metadata);
+                    updateMediaUI(payload.data.metadata, payload.data.playbackState);
                 } else if (payload.type === 'state') {
                     updateBrightnessUI(payload.data.brightness);
-                    if(payload.data.media) updateMediaUI(payload.data.media);
+                    if(payload.data.media) {
+                        updateMediaUI(payload.data.media, payload.data.mediaState);
+                    }
                 }
             });
             
