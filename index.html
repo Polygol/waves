@@ -713,6 +713,13 @@
                         activeMiniApp = null;
                         updateMiniAppPill();
                     }
+                    // NEW: Handle Notifications
+                    if (payload.data.notifications) {
+                        renderRemoteNotifications(payload.data.notifications);
+                    }
+                } else if (payload.type === 'notificationUpdate') {
+                     // Handle single notification push
+                     renderRemoteNotifications(payload.data);
                 }
             });
             
@@ -729,6 +736,14 @@
                     renderAppList(payload.data);
                     updateMiniAppPill(); // Refresh pill in case icon was missing
                 }
+            });
+
+            room.onPeerJoin(() => {
+                setStatus(true);
+                // Request initial state explicitly to fix reconnection bug!
+                sendCommand('getApps');
+                sendCommand('requestScreenshot');
+                sendCommand('getState'); 
             });
 
             room.onPeerJoin(() => setStatus(true));
@@ -855,6 +870,7 @@
                             // Simplified inline rendering for row items (Buttons & Text mostly)
                             if (childComp.type === 'button') {
                                 const btn = document.createElement('button');
+                                btn.id = `comp_${childComp.id}`;
                                 btn.className = 'btn-primary';
                                 btn.style.flex = '1';
                                 btn.style.marginTop = '0';
@@ -869,6 +885,15 @@
                                 else btn.innerText = childComp.label;
                                 btn.onclick = () => sendAppAction(childComp.id);
                                 el.appendChild(btn);
+                            }
+                            // Handle TEXT in row (Fix for Music App timers)
+                            else if (childComp.type === 'text') {
+                                const txt = document.createElement('div');
+                                txt.id = `comp_${childComp.id}`;
+                                txt.innerText = childComp.content;
+                                txt.style.fontSize = childComp.size === 'large' ? '24px' : '14px';
+                                txt.style.opacity = '0.8';
+                                el.appendChild(txt);
                             }
                         });
                     }
@@ -1059,6 +1084,34 @@
             }
             connect({ r: code });
         };
+
+        function renderRemoteNotifications(notifications) {
+            const container = document.getElementById('remote-notifications-list');
+            const area = document.getElementById('remote-notifications-area');
+            container.innerHTML = '';
+
+            if (!notifications || notifications.length === 0) {
+                area.style.display = 'none';
+                return;
+            }
+
+            area.style.display = 'flex';
+            
+            notifications.forEach(notif => {
+                const card = document.createElement('div');
+                card.className = 'filled-card';
+                
+                const icon = notif.icon || 'notifications';
+                
+                card.innerHTML = `
+                    <span class="material-symbols-rounded" style="font-size: 24px;">${icon}</span>
+                    <div style="flex:1;">
+                        <div style="font-size: 14px; opacity: 0.9;">${notif.text || notif.message}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
 
         // --- Init ---
         const saved = localStorage.getItem('waves_client_config');
