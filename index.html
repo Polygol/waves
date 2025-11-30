@@ -649,6 +649,9 @@
                     // 2. Set pending state and show loading
                     // If Mini App tab is active, we WANT to open the remote UI.
                     if (drawerTab === 'mini') {
+                        // For Mini Apps, launch silently in background (if not already running)
+                        // and prepare to show the Remote UI
+                        sendCommand('launchAppSilently', { url: app.url });
                         pendingAppLaunch = app.name;
                         showLoading(`Opening ${app.name}...`);
                     } else {
