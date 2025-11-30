@@ -302,10 +302,20 @@
             background: rgba(255,255,255,0.2);
             color: white; border: none; padding: 8px; border-radius: 50%;
         }
-
+        .loading-toast {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: rgba(50, 50, 50, 0.9); color: white;
+            padding: 12px 24px; border-radius: 50px;
+            font-size: 14px; font-weight: 500;
+            pointer-events: none; opacity: 0; transition: opacity 0.3s;
+            z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .loading-toast.show { opacity: 1; }
     </style>
 </head>
 <body>
+    <!-- Loading Toast -->
+    <div id="loading-toast" class="loading-toast">Loading...</div>
 
     <!-- SETUP VIEW -->
     <div id="view-setup" class="view active">
@@ -421,8 +431,20 @@
         const CONFIG = { appId: 'polygol-connect-v1' };
         let room, sendAction;
         let currentConfig = null;
+        let currentRemoteApp = null;
+        let pendingAppLaunch = null; // Tracks which app the user requested to view
 
         // --- UI Helpers ---
+        function showLoading(msg = 'Loading...') {
+            const t = document.getElementById('loading-toast');
+            t.innerText = msg;
+            t.classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-toast').classList.remove('show');
+        }
+
         function showView(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -510,8 +532,23 @@
                 const div = document.createElement('div');
                 div.className = 'app-list-item';
                 div.onclick = () => {
+                    // 1. Launch the app on host (if not open)
                     sendCommand('launchApp', { url: app.url });
+                    
+                    // 2. Set pending state and show loading
+                    pendingAppLaunch = app.name;
+                    showLoading(`Opening ${app.name}...`);
+                    
+                    // 3. Close drawer
                     toggleAppDrawer(); 
+                    
+                    // 4. Timeout to clear loading if app doesn't respond
+                    setTimeout(() => {
+                        if (pendingAppLaunch === app.name) {
+                            hideLoading();
+                            pendingAppLaunch = null;
+                        }
+                    }, 5000);
                 };
                 
                 const imgHtml = app.icon 
@@ -594,10 +631,23 @@
             // Listen for State Updates (Media, Brightness)
             getUpd((payload) => {
                 if (payload.type === 'appUI') {
-                    if (payload.data) {
-                        renderAppUI(payload.data.appName, payload.data.components);
+                    // Only switch view if this is the app the user requested
+                    if (payload.data && payload.data.appName) {
+                        if (pendingAppLaunch === payload.data.appName || currentRemoteApp === payload.data.appName) {
+                            renderAppUI(payload.data.appName, payload.data.components);
+                            pendingAppLaunch = null;
+                            hideLoading();
+                        }
                     } else {
-                        exitAppUI(); // Host cleared it
+                        // Host cleared UI (e.g. app closed), only exit if we are in that app
+                        if (currentRemoteApp) { 
+                            exitAppUI(); 
+                        }
+                    }
+                } else if (payload.type === 'appUIUpdate') {
+                    // Handle partial updates
+                    if (currentRemoteApp && payload.data.appName === currentRemoteApp) {
+                        updateAppComponents(payload.data.updates);
                     }
                 } else if (payload.type === 'mediaUpdate') {
                     updateMediaUI(payload.data.metadata, payload.data.playbackState);
@@ -625,8 +675,6 @@
             room.onPeerJoin(() => setStatus(true));
             room.onPeerLeave(() => setStatus(false));
         }
-
-        let currentRemoteApp = null;
     
         function exitAppUI() {
             document.getElementById('app-specific-ui').style.display = 'none';
@@ -654,6 +702,7 @@
                 // --- Button Component ---
                 if (comp.type === 'button') {
                     el = document.createElement('button');
+                    el.id = `comp_${comp.id}`; // Add ID
                     // Style based on 'style' prop: 'filled' (default), 'tonal', 'outlined'
                     if (comp.style === 'outlined') {
                         el.className = 'btn-primary';
@@ -680,6 +729,7 @@
                 // --- Text Component ---
                 else if (comp.type === 'text') {
                     el = document.createElement('div');
+                    el.id = `comp_${comp.id}`; // Add ID
                     el.innerText = comp.content;
                     if (comp.size === 'large') {
                         el.style.fontSize = '32px';
@@ -699,14 +749,35 @@
                     el.innerHTML = `<span class="material-symbols-rounded">${comp.icon || 'tune'}</span>`;
                     
                     const input = document.createElement('input');
+                    input.id = `comp_${comp.id}`; // Add ID for live updates
                     input.type = 'range';
                     input.min = comp.min || 0;
                     input.max = comp.max || 100;
                     input.value = comp.value || 50;
                     
-                    input.onchange = (e) => sendAppAction(comp.id, e.target.value);
+                    // Use 'input' event for smoother local feedback, sends 'change' on drop
+                    input.oninput = (e) => sendAppAction(comp.id, e.target.value);
                     
                     el.appendChild(input);
+                }
+
+                // --- Image Component ---
+                else if (comp.type === 'image') {
+                    el = document.createElement('div');
+                    el.style.display = 'flex';
+                    el.style.justifyContent = 'center';
+                    el.style.marginBottom = '16px';
+                    
+                    const img = document.createElement('img');
+                    img.id = `comp_${comp.id}`;
+                    img.src = comp.src || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                    img.style.width = comp.width || '200px';
+                    img.style.height = comp.height || '200px';
+                    img.style.borderRadius = comp.style === 'rounded' ? '16px' : '0';
+                    img.style.objectFit = 'cover';
+                    img.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                    
+                    el.appendChild(img);
                 }
     
                 // --- Grid/Row Layout ---
@@ -801,6 +872,22 @@
                 id: id, 
                 value: value 
             });
+        }
+
+        function updateAppComponents(updates) {
+            for (const [id, value] of Object.entries(updates)) {
+                const el = document.getElementById(`comp_${id}`);
+                if (!el) continue;
+
+                if (el.tagName === 'INPUT' && el.type === 'range') {
+                    el.value = value;
+                } else if (el.tagName === 'DIV' && !el.classList.contains('slider-container')) {
+                    el.innerText = value;
+                } else if (el.tagName === 'IMG') {
+                    el.src = value;
+                }
+                // Add other component types as needed
+            }
         }
 
         function renderEmojiGrid(options, peerId, sendFunc) {
