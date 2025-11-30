@@ -628,12 +628,18 @@
             const container = document.getElementById('app-list-container');
             container.innerHTML = '';
             
-            if(!apps || apps.length === 0) {
-                container.innerHTML = '<p style="text-align:center; opacity:0.5; padding:20px;">No apps found on host.</p>';
+            let filteredApps = apps;
+            if (drawerTab === 'mini') {
+                filteredApps = apps.filter(app => app.hasMiniApp);
+            }
+            
+            if(!filteredApps || filteredApps.length === 0) {
+                const msg = drawerTab === 'mini' ? 'No Mini Apps found.' : 'No apps found on host.';
+                container.innerHTML = `<p style="text-align:center; opacity:0.5; padding:20px;">${msg}</p>`;
                 return;
             }
 
-            apps.forEach(app => {
+            filteredApps.forEach(app => {
                 const div = document.createElement('div');
                 div.className = 'app-list-item';
                 div.onclick = () => {
