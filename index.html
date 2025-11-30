@@ -311,6 +311,27 @@
             z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         .loading-toast.show { opacity: 1; }
+        .mini-app-pill {
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+            border-radius: 28px;
+            padding: 8px 16px 8px 8px;
+            display: none;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .mini-app-pill.visible { display: flex; }
+        .mini-app-pill:active { transform: scale(0.98); }
+        .mini-app-pill img { width: 48px; height: 48px; border-radius: 20px; object-fit: cover; }
+        .mini-app-pill .info { flex: 1; font-weight: 500; font-size: 16px; }
+        .mini-app-pill .action-btn { 
+            background: var(--md-sys-color-primary); 
+            color: var(--md-sys-color-on-primary);
+            border: none; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -356,6 +377,13 @@
         </div>
 
         <div id="default-dashboard-ui">
+            <!-- Active Mini App Pill -->
+            <div id="mini-app-pill" class="mini-app-pill" onclick="openActiveMiniApp()">
+                <img id="mini-app-pill-icon" src="">
+                <div id="mini-app-pill-name" class="info">App Name</div>
+                <div class="action-btn">Open</div>
+            </div>
+            
             <!-- Media Player -->
             <div class="media-player">
                 <img id="media-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="album-art">
@@ -433,6 +461,8 @@
         let currentConfig = null;
         let currentRemoteApp = null;
         let pendingAppLaunch = null; // Tracks which app the user requested to view
+        let activeMiniApp = null;
+        let appListData = [];
 
         // --- UI Helpers ---
         function showLoading(msg = 'Loading...') {
@@ -631,6 +661,14 @@
             // Listen for State Updates (Media, Brightness)
             getUpd((payload) => {
                 if (payload.type === 'appUI') {
+                    // Store active app state regardless of view
+                    if (payload.data && payload.data.appName) {
+                        activeMiniApp = payload.data;
+                    } else {
+                        activeMiniApp = null;
+                    }
+                    updateMiniAppPill();
+
                     // Only switch view if this is the app the user requested
                     if (payload.data && payload.data.appName) {
                         if (pendingAppLaunch === payload.data.appName || currentRemoteApp === payload.data.appName) {
@@ -668,7 +706,9 @@
                         document.getElementById('screenshot-view').classList.add('open');
                     }
                 } else if (payload.type === 'appList') {
+                    appListData = payload.data;
                     renderAppList(payload.data);
+                    updateMiniAppPill(); // Refresh pill in case icon was missing
                 }
             });
 
@@ -872,6 +912,30 @@
                 id: id, 
                 value: value 
             });
+        }
+
+        function updateMiniAppPill() {
+            const pill = document.getElementById('mini-app-pill');
+            if (!pill) return;
+
+            if (activeMiniApp) {
+                const appName = activeMiniApp.appName;
+                // Find icon from the cached app list
+                const appInfo = appListData.find(a => a.name === appName);
+                const iconSrc = appInfo && appInfo.icon ? appInfo.icon : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                
+                document.getElementById('mini-app-pill-icon').src = iconSrc;
+                document.getElementById('mini-app-pill-name').innerText = appName;
+                pill.classList.add('visible');
+            } else {
+                pill.classList.remove('visible');
+            }
+        }
+        
+        function openActiveMiniApp() {
+            if (activeMiniApp) {
+                renderAppUI(activeMiniApp.appName, activeMiniApp.components);
+            }
         }
 
         function updateAppComponents(updates) {
