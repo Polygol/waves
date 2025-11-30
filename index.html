@@ -908,7 +908,9 @@
                 else if (comp.type === 'slider') {
                     el = document.createElement('div');
                     el.className = 'slider-container';
-                    el.innerHTML = `<span class="material-symbols-rounded">${comp.icon}</span>`;
+                    if (comp.icon) {
+                        el.innerHTML = `<span class="material-symbols-rounded">${comp.icon}</span>`;
+                    }
                     
                     const input = document.createElement('input');
                     input.id = `comp_${comp.id}`; // Add ID for live updates
