@@ -694,6 +694,20 @@
                     if(payload.data.media) {
                         updateMediaUI(payload.data.media, payload.data.mediaState);
                     }
+                    // NEW: Handle App UI from full state
+                    if (payload.data.appUI) {
+                        activeMiniApp = payload.data.appUI;
+                        updateMiniAppPill();
+                        // If we were waiting for this specific app, open it now
+                        if (pendingAppLaunch === payload.data.appUI.appName) {
+                            renderAppUI(payload.data.appUI.appName, payload.data.appUI.components);
+                            pendingAppLaunch = null;
+                            hideLoading();
+                        }
+                    } else {
+                        activeMiniApp = null;
+                        updateMiniAppPill();
+                    }
                 }
             });
             
