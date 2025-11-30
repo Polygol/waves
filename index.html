@@ -333,6 +333,57 @@
             color: var(--md-sys-color-on-primary);
             border: none; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500;
         }
+        /* Segmented Control */
+        .segment-control {
+            display: flex;
+            background: var(--md-sys-color-surface-variant);
+            border-radius: 20px;
+            padding: 4px;
+            margin-bottom: 16px;
+        }
+        .segment-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 10px;
+            border-radius: 16px;
+            color: var(--md-sys-color-on-surface-variant);
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+        }
+        .segment-btn.active {
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Widget Grid */
+        .widget-grid-remote {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .widget-preview {
+            background: var(--md-sys-color-surface-variant);
+            border-radius: 16px;
+            overflow: hidden;
+            aspect-ratio: 1/1;
+            position: relative;
+        }
+        .widget-preview img {
+            width: 100%; height: 100%; object-fit: contain;
+        }
+
+        /* Live Activity Iframe */
+        .remote-activity-frame {
+            width: 100%;
+            border: none;
+            border-radius: 20px;
+            margin-bottom: 12px;
+            background: #000;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
@@ -384,6 +435,9 @@
                 <div id="mini-app-pill-name" class="info">App Name</div>
                 <div class="action-btn">Open</div>
             </div>
+
+            <!-- Live Activity Container -->
+            <div id="remote-live-activity-container"></div>
             
             <!-- Media Player -->
             <div class="media-player">
@@ -425,8 +479,17 @@
 
             <!-- Live Activities & Notifications -->
             <div id="remote-notifications-area" style="display: none; flex-direction: column; gap: 8px; margin-top: 24px;">
-                <h2 style="margin-top: 0;">Activity</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2 style="margin:0;">Activity</h2>
+                    <button class="icon-btn" onclick="sendCommand('clearNotifications')"><span class="material-symbols-rounded">clear_all</span></button>
+                </div>
                 <div id="remote-notifications-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+
+            <!-- Widget Previews -->
+            <div id="remote-widgets-area" style="display: none; flex-direction: column; gap: 8px; margin-top: 24px;">
+                <h2 style="margin:0; margin-bottom: 12px;">Widgets</h2>
+                <div id="remote-widgets-list" class="widget-grid-remote"></div>
             </div>
         </div>
 
@@ -446,6 +509,12 @@
             <h2>Applications</h2>
             <button class="icon-btn" onclick="toggleAppDrawer()"><span class="material-symbols-rounded">close</span></button>
         </div>
+        
+        <div class="segment-control">
+            <button id="tab-all" class="segment-btn active" onclick="switchDrawerTab('all')">All Apps</button>
+            <button id="tab-mini" class="segment-btn" onclick="switchDrawerTab('mini')">Mini Apps</button>
+        </div>
+
         <div id="app-list-container"></div>
     </div>
 
@@ -468,6 +537,7 @@
         let pendingAppLaunch = null; // Tracks which app the user requested to view
         let activeMiniApp = null;
         let appListData = [];
+        let drawerTab = 'all'; // 'all' or 'mini'
 
         // --- UI Helpers ---
         function showLoading(msg = 'Loading...') {
@@ -571,19 +641,27 @@
                     sendCommand('launchApp', { url: app.url });
                     
                     // 2. Set pending state and show loading
-                    pendingAppLaunch = app.name;
-                    showLoading(`Opening ${app.name}...`);
+                    // If Mini App tab is active, we WANT to open the remote UI.
+                    if (drawerTab === 'mini') {
+                        pendingAppLaunch = app.name;
+                        showLoading(`Opening ${app.name}...`);
+                    } else {
+                        // Just launching on host, no local loading needed
+                        // Optional: Show small toast "Opened on screen"
+                    }
                     
                     // 3. Close drawer
                     toggleAppDrawer(); 
                     
                     // 4. Timeout to clear loading if app doesn't respond
-                    setTimeout(() => {
-                        if (pendingAppLaunch === app.name) {
-                            hideLoading();
-                            pendingAppLaunch = null;
-                        }
-                    }, 5000);
+                    if (drawerTab === 'mini') {
+                        setTimeout(() => {
+                            if (pendingAppLaunch === app.name) {
+                                hideLoading();
+                                pendingAppLaunch = null;
+                            }
+                        }, 5000);
+                    }
                 };
                 
                 const imgHtml = app.icon 
@@ -720,6 +798,10 @@
                 } else if (payload.type === 'notificationUpdate') {
                      // Handle single notification push
                      renderRemoteNotifications(payload.data);
+                } else if (payload.type === 'liveActivityStart') {
+                    renderLiveActivityIframe(payload.data);
+                } else if (payload.type === 'widgetUpdate') {
+                    renderWidgetPreviews(payload.data);
                 }
             });
             
@@ -980,6 +1062,48 @@
             if (activeMiniApp) {
                 renderAppUI(activeMiniApp.appName, activeMiniApp.components);
             }
+        }
+
+        function switchDrawerTab(tab) {
+            drawerTab = tab;
+            document.getElementById('tab-all').classList.toggle('active', tab === 'all');
+            document.getElementById('tab-mini').classList.toggle('active', tab === 'mini');
+            // Re-render list (using cached data)
+            if (appListData.length > 0) {
+                renderAppList(appListData);
+            }
+        }
+
+        function renderLiveActivityIframe(data) {
+            const container = document.getElementById('remote-live-activity-container');
+            container.innerHTML = ''; // Clear previous
+            if (!data || !data.url) return;
+
+            const iframe = document.createElement('iframe');
+            iframe.src = data.url;
+            iframe.className = 'remote-activity-frame';
+            iframe.style.height = data.height || '120px';
+            container.appendChild(iframe);
+        }
+
+        function renderWidgetPreviews(widgets) {
+            const container = document.getElementById('remote-widgets-list');
+            const area = document.getElementById('remote-widgets-area');
+            
+            if (!widgets || widgets.length === 0) {
+                area.style.display = 'none';
+                return;
+            }
+            
+            area.style.display = 'flex';
+            container.innerHTML = '';
+            
+            widgets.forEach(w => {
+                const el = document.createElement('div');
+                el.className = 'widget-preview';
+                el.innerHTML = `<img src="${w.img}">`;
+                container.appendChild(el);
+            });
         }
 
         function updateAppComponents(updates) {
