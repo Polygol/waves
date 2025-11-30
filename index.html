@@ -345,44 +345,55 @@
             </button>
         </div>
 
-        <!-- Media Player -->
-        <div class="media-player">
-            <img id="media-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="album-art">
-            <div class="track-info">
-                <h3 id="media-title">No Media</h3>
-                <p id="media-artist">Not Playing</p>
+        <div id="default-dashboard-ui">
+            <!-- Media Player -->
+            <div class="media-player">
+                <img id="media-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="album-art">
+                <div class="track-info">
+                    <h3 id="media-title">No Media</h3>
+                    <p id="media-artist">Not Playing</p>
+                </div>
+                <div class="media-controls">
+                    <button class="icon-btn" onclick="sendMedia('prev')"><span class="material-symbols-rounded" style="font-size: 32px;">skip_previous</span></button>
+                    <button class="play-pause" onclick="sendMedia('playPause')"><span class="material-symbols-rounded" style="font-size: 36px;">play_arrow</span></button>
+                    <button class="icon-btn" onclick="sendMedia('next')"><span class="material-symbols-rounded" style="font-size: 32px;">skip_next</span></button>
+                </div>
             </div>
-            <div class="media-controls">
-                <button class="icon-btn" onclick="sendMedia('prev')"><span class="material-symbols-rounded" style="font-size: 32px;">skip_previous</span></button>
-                <button class="play-pause" onclick="sendMedia('playPause')"><span class="material-symbols-rounded" style="font-size: 36px;">play_arrow</span></button>
-                <button class="icon-btn" onclick="sendMedia('next')"><span class="material-symbols-rounded" style="font-size: 32px;">skip_next</span></button>
+    
+            <h2>Controls</h2>
+            <div class="grid-2">
+                <button class="action-card" onclick="sendCommand('toggleSleep')">
+                    <span class="material-symbols-rounded" style="font-size: 32px;">power_settings_new</span>
+                    <span class="label-large">Power</span>
+                </button>
+                <button class="action-card" onclick="sendCommand('home')">
+                    <span class="material-symbols-rounded" style="font-size: 32px;">home</span>
+                    <span class="label-large">Home</span>
+                </button>
+                 <button class="action-card" onclick="requestScreenshot()">
+                    <span class="material-symbols-rounded" style="font-size: 32px;">screenshot_monitor</span>
+                    <span class="label-large">View</span>
+                </button>
+                 <button class="action-card" onclick="toggleAppDrawer()">
+                    <span class="material-symbols-rounded" style="font-size: 32px;">apps</span>
+                    <span class="label-large">Apps</span>
+                </button>
+            </div>
+    
+            <h2>Brightness</h2>
+            <div class="slider-container">
+                <span class="material-symbols-rounded">brightness_5</span>
+                <input type="range" id="remote-brightness" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
             </div>
         </div>
 
-        <h2>Controls</h2>
-        <div class="grid-2">
-            <button class="action-card" onclick="sendCommand('toggleSleep')">
-                <span class="material-symbols-rounded" style="font-size: 32px;">power_settings_new</span>
-                <span class="label-large">Power</span>
-            </button>
-            <button class="action-card" onclick="sendCommand('home')">
-                <span class="material-symbols-rounded" style="font-size: 32px;">home</span>
-                <span class="label-large">Home</span>
-            </button>
-             <button class="action-card" onclick="requestScreenshot()">
-                <span class="material-symbols-rounded" style="font-size: 32px;">screenshot_monitor</span>
-                <span class="label-large">View</span>
-            </button>
-             <button class="action-card" onclick="toggleAppDrawer()">
-                <span class="material-symbols-rounded" style="font-size: 32px;">apps</span>
-                <span class="label-large">Apps</span>
-            </button>
-        </div>
-
-        <h2>Brightness</h2>
-        <div class="slider-container">
-            <span class="material-symbols-rounded">brightness_5</span>
-            <input type="range" id="remote-brightness" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
+        <div id="app-specific-ui" style="display: none;">
+            <div class="top-app-bar" style="margin-bottom: 20px;">
+                <button class="icon-btn" onclick="exitAppUI()"><span class="material-symbols-rounded">arrow_back</span></button>
+                <span id="app-ui-title" style="font-weight: 500; font-size: 18px;">App Name</span>
+                <div style="width: 40px;"></div> <!-- Spacer -->
+            </div>
+            <div id="app-components-container" style="display: flex; flex-direction: column; gap: 16px;"></div>
         </div>
     </div>
 
@@ -582,7 +593,13 @@
             
             // Listen for State Updates (Media, Brightness)
             getUpd((payload) => {
-                if (payload.type === 'mediaUpdate') {
+                if (payload.type === 'appUI') {
+                    if (payload.data) {
+                        renderAppUI(payload.data.appName, payload.data.components);
+                    } else {
+                        exitAppUI(); // Host cleared it
+                    }
+                } else if (payload.type === 'mediaUpdate') {
                     updateMediaUI(payload.data.metadata, payload.data.playbackState);
                 } else if (payload.type === 'state') {
                     updateBrightnessUI(payload.data.brightness);
@@ -607,6 +624,111 @@
 
             room.onPeerJoin(() => setStatus(true));
             room.onPeerLeave(() => setStatus(false));
+        }
+
+        let currentRemoteApp = null;
+    
+        function exitAppUI() {
+            document.getElementById('app-specific-ui').style.display = 'none';
+            document.getElementById('default-dashboard-ui').style.display = 'block';
+            currentRemoteApp = null;
+        }
+    
+        function renderAppUI(appName, components) {
+            currentRemoteApp = appName;
+            
+            // Switch Views
+            document.getElementById('default-dashboard-ui').style.display = 'none';
+            const container = document.getElementById('app-specific-ui');
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            
+            document.getElementById('app-ui-title').innerText = appName;
+            const list = document.getElementById('app-components-container');
+            list.innerHTML = '';
+    
+            // Render Components
+            components.forEach(comp => {
+                let el;
+                
+                // --- Button Component ---
+                if (comp.type === 'button') {
+                    el = document.createElement('button');
+                    // Style based on 'style' prop: 'filled' (default), 'tonal', 'outlined'
+                    if (comp.style === 'outlined') {
+                        el.className = 'btn-primary';
+                        el.style.background = 'transparent';
+                        el.style.border = '1px solid var(--md-sys-color-primary)';
+                    } else if (comp.style === 'tonal') {
+                        el.className = 'btn-primary';
+                        el.style.background = 'var(--md-sys-color-secondary-container)';
+                        el.style.color = 'var(--md-sys-color-on-secondary-container)';
+                    } else {
+                        el.className = 'btn-primary'; // Default filled
+                    }
+                    
+                    // Icon support
+                    if (comp.icon) {
+                        el.innerHTML = `<span class="material-symbols-rounded">${comp.icon}</span> ${comp.label}`;
+                    } else {
+                        el.innerText = comp.label;
+                    }
+                    
+                    el.onclick = () => sendAppAction(comp.id);
+                }
+                
+                // --- Text Component ---
+                else if (comp.type === 'text') {
+                    el = document.createElement('div');
+                    el.innerText = comp.content;
+                    if (comp.size === 'large') {
+                        el.style.fontSize = '32px';
+                        el.style.textAlign = 'center';
+                    } else if (comp.size === 'medium') {
+                        el.style.fontSize = '20px';
+                        el.style.opacity = '0.8';
+                    } else {
+                        el.style.opacity = '0.6';
+                    }
+                }
+    
+                // --- Slider Component ---
+                else if (comp.type === 'slider') {
+                    el = document.createElement('div');
+                    el.className = 'slider-container';
+                    el.innerHTML = `<span class="material-symbols-rounded">${comp.icon || 'tune'}</span>`;
+                    
+                    const input = document.createElement('input');
+                    input.type = 'range';
+                    input.min = comp.min || 0;
+                    input.max = comp.max || 100;
+                    input.value = comp.value || 50;
+                    
+                    input.oninput = (e) => sendAppAction(comp.id, e.target.value);
+                    
+                    el.appendChild(input);
+                }
+    
+                // --- Grid/Row Layout ---
+                else if (comp.type === 'row') {
+                    el = document.createElement('div');
+                    el.style.display = 'flex';
+                    el.style.gap = '12px';
+                    // Recursive rendering for children would go here, 
+                    // but for simplicity let's keep it flat for now or assumes simple objects.
+                }
+    
+                if (el) list.appendChild(el);
+            });
+        }
+    
+        function sendAppAction(id, value = null) {
+            if (!currentRemoteApp) return;
+            sendCommand('appAction', { 
+                appName: currentRemoteApp, 
+                id: id, 
+                value: value 
+            });
         }
 
         function renderEmojiGrid(options, peerId, sendFunc) {
