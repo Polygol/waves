@@ -643,10 +643,7 @@
                 const div = document.createElement('div');
                 div.className = 'app-list-item';
                 div.onclick = () => {
-                    // 1. Launch the app on host (if not open)
-                    sendCommand('launchApp', { url: app.url });
-                    
-                    // 2. Set pending state and show loading
+                    // Set pending state and show loading
                     // If Mini App tab is active, we WANT to open the remote UI.
                     if (drawerTab === 'mini') {
                         // For Mini Apps, launch silently in background (if not already running)
@@ -656,7 +653,7 @@
                         showLoading(`Opening ${app.name}...`);
                     } else {
                         // Just launching on host, no local loading needed
-                        // Optional: Show small toast "Opened on screen"
+                        sendCommand('launchApp', { url: app.url });
                     }
                     
                     // 3. Close drawer
