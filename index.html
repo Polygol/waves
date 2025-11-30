@@ -422,6 +422,12 @@
                 <span class="material-symbols-rounded">brightness_5</span>
                 <input type="range" id="remote-brightness" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
             </div>
+
+            <!-- Live Activities & Notifications -->
+            <div id="remote-notifications-area" style="display: none; flex-direction: column; gap: 8px; margin-top: 24px;">
+                <h2 style="margin-top: 0;">Activity</h2>
+                <div id="remote-notifications-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
         </div>
 
         <div id="app-specific-ui" style="display: none;">
