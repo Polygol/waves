@@ -200,6 +200,7 @@
             align-items: center;
             text-align: center;
             gap: 16px;
+            margin-bottom: 12px;
         }
         .album-art {
             width: 120px; height: 120px;
@@ -398,7 +399,6 @@
                 </div>
             </div>
     
-            <h2>Controls</h2>
             <div class="grid-2">
                 <button class="action-card" onclick="sendCommand('toggleSleep')">
                     <span class="material-symbols-rounded" style="font-size: 32px;">power_settings_new</span>
@@ -418,7 +418,6 @@
                 </button>
             </div>
     
-            <h2>Brightness</h2>
             <div class="slider-container">
                 <span class="material-symbols-rounded">brightness_5</span>
                 <input type="range" id="remote-brightness" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
