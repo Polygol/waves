@@ -704,7 +704,7 @@
                     input.max = comp.max || 100;
                     input.value = comp.value || 50;
                     
-                    input.oninput = (e) => sendAppAction(comp.id, e.target.value);
+                    input.onchange = (e) => sendAppAction(comp.id, e.target.value);
                     
                     el.appendChild(input);
                 }
@@ -714,8 +714,80 @@
                     el = document.createElement('div');
                     el.style.display = 'flex';
                     el.style.gap = '12px';
-                    // Recursive rendering for children would go here, 
-                    // but for simplicity let's keep it flat for now or assumes simple objects.
+                    el.style.alignItems = 'center';
+                    
+                    // Recursive rendering for row children
+                    if (comp.components && Array.isArray(comp.components)) {
+                        // Create a temporary container to render children into, then move them
+                        // This reuses the logic without duplicating it, though a refactor to createComponent() would be cleaner.
+                        // For this inline approach, we'll iterate manually to support basic nesting.
+                        comp.components.forEach(childComp => {
+                            // Simplified inline rendering for row items (Buttons & Text mostly)
+                            if (childComp.type === 'button') {
+                                const btn = document.createElement('button');
+                                btn.className = 'btn-primary';
+                                btn.style.flex = '1';
+                                btn.style.marginTop = '0';
+                                if (childComp.style === 'outlined') {
+                                    btn.style.background = 'transparent';
+                                    btn.style.border = '1px solid var(--md-sys-color-primary)';
+                                } else if (childComp.style === 'tonal') {
+                                    btn.style.background = 'var(--md-sys-color-secondary-container)';
+                                    btn.style.color = 'var(--md-sys-color-on-secondary-container)';
+                                }
+                                if (childComp.icon) btn.innerHTML = `<span class="material-symbols-rounded">${childComp.icon}</span>`;
+                                else btn.innerText = childComp.label;
+                                btn.onclick = () => sendAppAction(childComp.id);
+                                el.appendChild(btn);
+                            }
+                        });
+                    }
+                }
+                
+                // --- Input Component ---
+                else if (comp.type === 'input') {
+                    el = document.createElement('input');
+                    el.type = 'text';
+                    el.className = 'code-input'; 
+                    el.style.textAlign = 'left';
+                    el.style.fontSize = '16px';
+                    el.style.letterSpacing = 'normal';
+                    el.style.marginBottom = '0';
+                    el.style.background = 'var(--md-sys-color-surface-variant)';
+                    el.placeholder = comp.placeholder || '';
+                    el.value = comp.value || '';
+                    
+                    el.onchange = (e) => sendAppAction(comp.id, e.target.value);
+                }
+
+                // --- List Component ---
+                else if (comp.type === 'list') {
+                    el = document.createElement('div');
+                    el.style.display = 'flex';
+                    el.style.flexDirection = 'column';
+                    el.style.gap = '8px';
+
+                    comp.items.forEach(item => {
+                        const itemEl = document.createElement('div');
+                        itemEl.className = 'filled-card'; 
+                        itemEl.style.marginBottom = '0';
+                        itemEl.style.cursor = 'pointer';
+                        itemEl.onclick = () => sendAppAction(item.id);
+
+                        let imgHtml = '';
+                        if (item.image) {
+                            imgHtml = `<img src="${item.image}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">`;
+                        }
+
+                        itemEl.innerHTML = `
+                            ${imgHtml}
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 16px;">${item.title}</div>
+                                ${item.subtitle ? `<div style="font-size: 13px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.subtitle}</div>` : ''}
+                            </div>
+                        `;
+                        el.appendChild(itemEl);
+                    });
                 }
     
                 if (el) list.appendChild(el);
