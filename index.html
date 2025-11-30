@@ -1074,9 +1074,12 @@
             drawerTab = tab;
             document.getElementById('tab-all').classList.toggle('active', tab === 'all');
             document.getElementById('tab-mini').classList.toggle('active', tab === 'mini');
-            // Re-render list (using cached data)
+            
+            // Always re-render or request fresh data
             if (appListData.length > 0) {
                 renderAppList(appListData);
+            } else {
+                sendCommand('getApps'); // Fetch if missing
             }
         }
 
