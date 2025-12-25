@@ -886,12 +886,12 @@
             };
 
             setQS('qs-silent', status.silent, 'notifications_off', 'notifications');
-            setQS('qs-night', status.night, 'bedtime', 'bedtime_off');
-            setQS('qs-focus', status.minimal, 'filter_tilt_shift', 'filter_tilt_shift'); // Icon might not change
+            setQS('qs-night', status.night, 'bedtime', 'moon_stars');
+            setQS('qs-focus', status.minimal, 'screen_record', 'filter_tilt_shift'); // Icon might not change
             
             // Theme check
             const isLight = status.context && status.context.theme === 'light';
-            setQS('qs-theme', isLight, 'light_mode', 'dark_mode');
+            setQS('qs-theme', isLight, 'radio_button_checked', 'radio_button_partial');
 
             // Network Indicator Logic
             const netPill = document.getElementById('network-pill');
