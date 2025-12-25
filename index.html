@@ -873,9 +873,7 @@
 
             room.onPeerJoin(() => {
                 setStatus(true);
-                // Request initial state explicitly to fix reconnection bug!
                 sendCommand('getApps');
-                sendCommand('requestScreenshot');
                 sendCommand('getState'); 
             });
 
