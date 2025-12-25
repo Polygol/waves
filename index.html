@@ -752,7 +752,11 @@
                     setTimeout(() => startRemoteSession(newConfig), 500);
                 } 
                 else if (payload.type === 'auth_failed') {
-                    alert("Incorrect Emoji. Connection refused.");
+                    alert("Incorrect Emoji");
+                    window.location.reload();
+                }
+                else if (payload.type === 'discovery_disabled') {
+                    alert("Connection failed: The host device is not accepting new devices");
                     window.location.reload();
                 }
             });
