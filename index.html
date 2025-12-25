@@ -488,9 +488,22 @@
             background: #000;
             overflow: hidden;
         }
+
+        #remote-wallpaper {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.2;
+            filter: blur(30px);
+            transition: background-image 0.5s ease;
+        }
     </style>
 </head>
 <body>
+    <div id="remote-wallpaper"></div>
+    
     <!-- Loading Toast -->
     <div id="loading-toast" class="loading-toast">Loading...</div>
 
@@ -1091,8 +1104,11 @@
                     updateMediaUI(payload.data.metadata, payload.data.playbackState);
                 } else if (payload.type === 'state') {
                     // Apply Status
-                    if (payload.data.systemStatus && payload.data.systemStatus.context) {
-                        applySystemContext(payload.data.systemStatus.context);
+                    if (payload.data.systemStatus) {
+                        if (payload.data.systemStatus.context) {
+                            applySystemContext(payload.data.systemStatus.context);
+                        }
+                        updateSystemStatusUI(payload.data.systemStatus);
                     }
                     // Apply Theme
                     if (payload.data.accentColor) {
@@ -1119,6 +1135,12 @@
                     // NEW: Handle Notifications
                     if (payload.data.notifications) {
                         renderRemoteNotifications(payload.data.notifications);
+                    }
+                } else if (payload.type === 'wallpaperUpdate') {
+                    const wpEl = document.getElementById('remote-wallpaper');
+                    if(wpEl) {
+                        if(payload.data) wpEl.style.backgroundImage = `url('${payload.data}')`;
+                        else wpEl.style.backgroundImage = 'none';
                     }
                 } else if (payload.type === 'notificationUpdate') {
                      // Handle single notification push
