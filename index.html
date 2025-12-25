@@ -494,6 +494,54 @@
             filter: blur(30px);
             transition: background-image 0.5s ease;
         }
+
+        /* Wallpaper Grid */
+        .wallpaper-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            padding: 16px 0;
+        }
+        .wallpaper-item {
+            aspect-ratio: 9/16;
+            background: #333;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .wallpaper-item.active {
+            border-color: var(--md-sys-color-primary);
+        }
+        .wallpaper-item img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        
+        /* QS Buttons */
+        .qs-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .qs-btn {
+            background: var(--md-sys-color-surface-variant);
+            border: none;
+            border-radius: 50%; /* Circle */
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--md-sys-color-on-surface);
+            font-size: 24px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .qs-btn.active {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
     </style>
 </head>
 <body>
@@ -537,7 +585,9 @@
             </div>
             <div id="remote-system-status" class="status-bar-remote">
                 <div class="status-group" id="status-toggles">
-                    <!-- Injected via JS -->
+                    <div class="status-pill" id="network-pill">
+                        <span class="material-symbols-rounded" style="font-size: 16px;">wifi_off</span>
+                    </div>
                 </div>
                 <div class="status-group">
                     <div class="status-pill" id="battery-pill">
@@ -575,6 +625,22 @@
                     <button class="icon-btn" onclick="sendMedia('next')"><span class="material-symbols-rounded" style="font-size: 32px;">skip_next</span></button>
                 </div>
             </div>
+
+            <!-- Quick Settings -->
+            <div class="qs-grid">
+                <button class="qs-btn" id="qs-silent" onclick="toggleQS('silent')">
+                    <span class="material-symbols-rounded">notifications</span>
+                </button>
+                <button class="qs-btn" id="qs-night" onclick="toggleQS('night')">
+                    <span class="material-symbols-rounded">bedtime</span>
+                </button>
+                <button class="qs-btn" id="qs-focus" onclick="toggleQS('focus')">
+                    <span class="material-symbols-rounded">filter_tilt_shift</span>
+                </button>
+                <button class="qs-btn" id="qs-theme" onclick="toggleQS('theme')">
+                    <span class="material-symbols-rounded">light_mode</span>
+                </button>
+            </div>
     
             <div class="grid-2">
                 <button class="action-card" onclick="sendCommand('toggleSleep')">
@@ -592,6 +658,10 @@
                  <button class="action-card" onclick="toggleAppDrawer()">
                     <span class="material-symbols-rounded" style="font-size: 32px;">apps</span>
                     <span class="label-large">Apps</span>
+                </button>
+                <button class="action-card" onclick="openWallpapers()">
+                    <span class="material-symbols-rounded" style="font-size: 32px;">wallpaper</span>
+                    <span class="label-large">Wallpapers</span>
                 </button>
                 <button class="action-card" onclick="openRemoteSettings()">
                     <span class="material-symbols-rounded" style="font-size: 32px;">settings</span>
@@ -643,6 +713,17 @@
         </div>
 
         <div id="app-list-container"></div>
+    </div>
+
+    <!-- Wallpaper Sheet -->
+    <div id="wallpaper-sheet" class="app-drawer-sheet">
+        <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
+            <h2>Wallpapers</h2>
+            <button class="icon-btn" onclick="toggleWallpaperSheet()"><span class="material-symbols-rounded">close</span></button>
+        </div>
+        <div id="wallpaper-list-container" class="wallpaper-grid">
+            <p>Loading...</p>
+        </div>
     </div>
 
     <!-- Settings View Container -->
@@ -790,21 +871,63 @@
         function updateSystemStatusUI(status) {
             if (!status) return;
             
-            const container = document.getElementById('status-toggles');
-            container.innerHTML = '';
-            
-            // Helper
-            const addPill = (icon, label, active) => {
-                const pill = document.createElement('div');
-                pill.className = `status-pill ${active ? 'active' : ''}`;
-                pill.innerHTML = `<span class="material-symbols-rounded" style="font-size: 16px;">${icon}</span>`;
-                container.appendChild(pill);
+            // QS Toggles state update
+            const setQS = (id, active, iconOn, iconOff) => {
+                const btn = document.getElementById(id);
+                if(btn) {
+                    if(active) {
+                        btn.classList.add('active');
+                        btn.querySelector('span').innerText = iconOn;
+                    } else {
+                        btn.classList.remove('active');
+                        btn.querySelector('span').innerText = iconOff;
+                    }
+                }
             };
-    
-            if (status.night) addPill('bedtime', 'Night', true);
-            if (status.silent) addPill('notifications_off', 'Silent', true);
-            if (status.minimal) addPill('filter_tilt_shift', 'Focus', true);
-            if (!status.wifi) addPill('wifi_off', 'Offline', false);
+
+            setQS('qs-silent', status.silent, 'notifications_off', 'notifications');
+            setQS('qs-night', status.night, 'bedtime', 'bedtime_off');
+            setQS('qs-focus', status.minimal, 'filter_tilt_shift', 'filter_tilt_shift'); // Icon might not change
+            
+            // Theme check
+            const isLight = status.context && status.context.theme === 'light';
+            setQS('qs-theme', isLight, 'light_mode', 'dark_mode');
+
+            // Network Indicator Logic
+            const netPill = document.getElementById('network-pill');
+            if (status.network) {
+                let icon = 'wifi_off';
+                let label = 'Offline';
+                const net = status.network;
+
+                if (net.online) {
+                    if (net.type === 'wifi') {
+                        icon = 'wifi';
+                        label = 'WiFi';
+                    } else if (net.type === 'cellular') {
+                        // Signal bars mapping based on effectiveType
+                        switch(net.effectiveType) {
+                            case '4g': icon = 'signal_cellular_4_bar'; break;
+                            case '3g': icon = 'signal_cellular_3_bar'; break;
+                            case '2g': icon = 'signal_cellular_2_bar'; break;
+                            case 'slow-2g': icon = 'signal_cellular_1_bar'; break;
+                            default: icon = 'signal_cellular_null';
+                        }
+                        label = net.effectiveType.toUpperCase();
+                    } else if (net.type === 'ethernet') {
+                        icon = 'settings_ethernet';
+                        label = 'Eth';
+                    } else {
+                        icon = 'network_check'; // Generic online
+                        label = 'Online';
+                    }
+                }
+                
+                netPill.innerHTML = `<span class="material-symbols-rounded" style="font-size: 16px;">${icon}</span><span>${label}</span>`;
+            } else {
+                // Fallback if network object missing
+                netPill.innerHTML = `<span class="material-symbols-rounded" style="font-size: 16px;">${status.wifi ? 'wifi' : 'wifi_off'}</span>`;
+            }
     
             // Battery
             if (status.battery) {
@@ -888,6 +1011,43 @@
 
         function toggleAppDrawer() {
             document.getElementById('app-drawer-sheet').classList.toggle('open');
+        }
+
+        function openWallpapers() {
+            document.getElementById('wallpaper-sheet').classList.add('open');
+            sendCommand('getWallpapers');
+        }
+
+        function toggleWallpaperSheet() {
+            document.getElementById('wallpaper-sheet').classList.remove('open');
+        }
+
+        function toggleQS(id) {
+            sendCommand('toggleQS', { id: id });
+        }
+
+        function renderWallpaperList(list) {
+            const container = document.getElementById('wallpaper-list-container');
+            container.innerHTML = '';
+            
+            list.forEach(wp => {
+                const item = document.createElement('div');
+                item.className = `wallpaper-item ${wp.active ? 'active' : ''}`;
+                item.onclick = () => {
+                    sendCommand('setWallpaper', { index: wp.index });
+                    // Optimistic update
+                    document.querySelectorAll('.wallpaper-item').forEach(el => el.classList.remove('active'));
+                    item.classList.add('active');
+                };
+                
+                if (wp.thumbnail) {
+                    item.innerHTML = `<img src="${wp.thumbnail}">`;
+                } else {
+                    item.innerHTML = `<div style="width:100%;height:100%;background:#555;display:flex;align-items:center;justify-content:center;"><span>IMG</span></div>`;
+                }
+                
+                container.appendChild(item);
+            });
         }
 
         function updateMediaUI(metadata, playbackState) {
@@ -1134,8 +1294,12 @@
                 } else if (payload.type === 'wallpaperUpdate') {
                     const wpEl = document.getElementById('remote-wallpaper');
                     if(wpEl) {
-                        if(payload.data) wpEl.style.backgroundImage = `url('${payload.data}')`;
-                        else wpEl.style.backgroundImage = 'none';
+                        // Ensure it is a proper URL or data URI
+                        if(payload.data && (payload.data.startsWith('data:') || payload.data.startsWith('http') || payload.data.startsWith('blob:'))) {
+                            wpEl.style.backgroundImage = `url('${payload.data}')`;
+                        } else {
+                            wpEl.style.backgroundImage = 'none';
+                        }
                     }
                 } else if (payload.type === 'notificationUpdate') {
                      // Handle single notification push
@@ -1159,6 +1323,8 @@
                     appListData = payload.data;
                     renderAppList(payload.data);
                     updateMiniAppPill(); // Refresh pill in case icon was missing
+                } else if (payload.type === 'wallpaperList') {
+                    renderWallpaperList(payload.data);
                 } else if (payload.type === 'requestUpload') {
                     const { accept, multiple, requestId } = payload.data;
                     const modal = document.getElementById('upload-modal');
