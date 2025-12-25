@@ -668,23 +668,23 @@
             <div class="grid-2">
                 <button class="action-card" onclick="sendCommand('toggleSleep')">
                     <span class="material-symbols-rounded" style="font-size: 32px;">power_settings_new</span>
-                    <span class="label-large">Power</span>
+                    <span class="label-large">Sleep</span>
                 </button>
                 <button class="action-card" onclick="sendCommand('home')">
                     <span class="material-symbols-rounded" style="font-size: 32px;">home</span>
                     <span class="label-large">Home</span>
                 </button>
                  <button class="action-card" onclick="requestScreenshot()">
-                    <span class="material-symbols-rounded" style="font-size: 32px;">screenshot_monitor</span>
-                    <span class="label-large">View</span>
+                    <span class="material-symbols-rounded" style="font-size: 32px;">airplay</span>
+                    <span class="label-large">Preview</span>
                 </button>
                  <button class="action-card" onclick="toggleAppDrawer()">
-                    <span class="material-symbols-rounded" style="font-size: 32px;">apps</span>
-                    <span class="label-large">Apps</span>
+                    <span class="material-symbols-rounded" style="font-size: 32px;">grid_view</span>
+                    <span class="label-large">Applications</span>
                 </button>
                 <button class="action-card" onclick="openWallpapers()">
-                    <span class="material-symbols-rounded" style="font-size: 32px;">wallpaper</span>
-                    <span class="label-large">Wallpapers</span>
+                    <span class="material-symbols-rounded" style="font-size: 32px;">filter_vintage</span>
+                    <span class="label-large">Wallpaper</span>
                 </button>
                 <button class="action-card" onclick="openRemoteSettings()">
                     <span class="material-symbols-rounded" style="font-size: 32px;">settings</span>
@@ -725,8 +725,8 @@
         </div>
         
         <div class="segment-control">
-            <button id="tab-all" class="segment-btn active" onclick="switchDrawerTab('all')">All Apps</button>
-            <button id="tab-mini" class="segment-btn" onclick="switchDrawerTab('mini')">Mini Apps</button>
+            <button id="tab-all" class="segment-btn active" onclick="switchDrawerTab('all')">All</button>
+            <button id="tab-mini" class="segment-btn" onclick="switchDrawerTab('mini')">Waves</button>
         </div>
 
         <div id="app-list-container"></div>
@@ -903,7 +903,7 @@
             };
 
             setQS('qs-silent', status.silent, 'notifications_off', 'notifications');
-            setQS('qs-night', status.night, 'bedtime', 'moon_stars');
+            setQS('qs-night', status.night, 'moon_stars', 'bedtime');
             setQS('qs-focus', status.minimal, 'screen_record', 'filter_tilt_shift'); // Icon might not change
             
             // Theme check
