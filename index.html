@@ -1048,6 +1048,11 @@
             const container = document.getElementById('wallpaper-list-container');
             container.innerHTML = '';
             
+            if (!list || list.length === 0) {
+                container.innerHTML = '<p style="grid-column: 1/-1; text-align:center; opacity:0.5;">No wallpapers found.</p>';
+                return;
+            }
+            
             list.forEach(wp => {
                 const item = document.createElement('div');
                 item.className = `wallpaper-item ${wp.active ? 'active' : ''}`;
@@ -1061,7 +1066,7 @@
                 if (wp.thumbnail) {
                     item.innerHTML = `<img src="${wp.thumbnail}">`;
                 } else {
-                    item.innerHTML = `<div style="width:100%;height:100%;background:#555;display:flex;align-items:center;justify-content:center;"><span>IMG</span></div>`;
+                    item.innerHTML = `<div style="width:100%;height:100%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:white;font-size:12px;">No Preview</div>`;
                 }
                 
                 container.appendChild(item);
@@ -1069,7 +1074,14 @@
         }
 
         function updateMediaUI(metadata, playbackState) {
-            if (!metadata) return;
+            const player = document.querySelector('.media-player');
+            
+            if (!metadata) {
+                if(player) player.style.display = 'none';
+                return;
+            }
+            
+            if(player) player.style.display = 'flex';
             
             // Update Text
             document.getElementById('media-title').innerText = metadata.title || "Unknown";
@@ -1085,10 +1097,8 @@
     
             // Update Play/Pause Button Icon
             const playBtnIcon = document.querySelector('.play-pause span');
-            const playBtn = document.querySelector('.play-pause');
             if (playbackState === 'playing') {
                 playBtnIcon.innerText = 'pause';
-                playBtn.borderRadius = '18px';
             } else {
                 playBtnIcon.innerText = 'play_arrow';
             }
@@ -1290,11 +1300,16 @@
                         applyTheme(payload.data.accentColor);
                     }
                     updateBrightnessUI(payload.data.brightness);
+                    const tempSlider = document.getElementById('remote-temperature');
                     if(tempSlider && payload.data.temperature !== undefined) {
                         tempSlider.value = payload.data.temperature;
                     }
                     if(payload.data.media) {
                         updateMediaUI(payload.data.media, payload.data.mediaState);
+                    } else {
+                        // Explicitly hide if media is null in state
+                        const player = document.querySelector('.media-player');
+                        if(player) player.style.display = 'none';
                     }
                     // NEW: Handle App UI from full state
                     if (payload.data.appUI) {
