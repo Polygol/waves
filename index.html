@@ -62,6 +62,45 @@
             --border-radius-md: 16px;
         }
 
+        /* Light Theme Overrides */
+        body.light-theme {
+            --md-sys-color-background: rgb(
+                calc(var(--theme-r) * 0.05 + 240), 
+                calc(var(--theme-g) * 0.05 + 240), 
+                calc(var(--theme-b) * 0.05 + 240)
+            );
+            --md-sys-color-on-background: #1C1B1F;
+            
+            --md-sys-color-surface: rgb(
+                calc(var(--theme-r) * 0.08 + 225), 
+                calc(var(--theme-g) * 0.08 + 225), 
+                calc(var(--theme-b) * 0.08 + 225)
+            );
+            
+            --md-sys-color-surface-variant: rgb(
+                calc(var(--theme-r) * 0.1 + 215), 
+                calc(var(--theme-g) * 0.1 + 215), 
+                calc(var(--theme-b) * 0.1 + 215)
+            );
+            
+            --md-sys-color-on-surface: #1C1B1F;
+            --md-sys-color-on-surface-variant: #49454F;
+        }
+        
+        /* High Contrast Overrides */
+        body.high-contrast {
+            --md-sys-color-background: #000 !important;
+            --md-sys-color-surface: #000 !important;
+            --md-sys-color-surface-variant: #333 !important;
+            border: 1px solid #fff;
+        }
+        body.light-theme.high-contrast {
+            --md-sys-color-background: #fff !important;
+            --md-sys-color-surface: #fff !important;
+            --md-sys-color-surface-variant: #eee !important;
+            border: 1px solid #000;
+        }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         
         body {
@@ -316,16 +355,14 @@
         
         /* Settings Frame */
         .settings-frame-container {
+            display: none;
             flex: 1;
             width: 100%;
-            background: #000; /* Settings app is dark */
+            background: var(--md-sys-color-background); /* Match theme */
             border-radius: 20px;
             overflow: hidden;
-            border: none;
-            display: none;
         }
-        .settings-frame-container.active { display: block; }
-        iframe#settings-frame { width: 100%; height: 100%; border: none; }
+        iframe#settings-frame { width: 100%; height: 100%; border: none; display: block; }
 
         /* App Drawer */
         .app-drawer-sheet {
@@ -656,15 +693,14 @@
         function applyTheme(rgb) {
             if (!rgb || rgb.length < 3) return;
             const [r, g, b] = rgb;
-            
             const root = document.documentElement;
             
-            // Update the base variables, CSS calc() handles the rest
+            // Set base RGB for calculations
             root.style.setProperty('--theme-r', r);
             root.style.setProperty('--theme-g', g);
             root.style.setProperty('--theme-b', b);
             
-            // Update browser chrome color
+            // Update Chrome Color
             const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
             document.querySelector('meta[name="theme-color"]').setAttribute('content', hex);
         }
@@ -701,6 +737,33 @@
         }
 
         // --- System Status ---
+        function applySystemContext(context) {
+            if (!context) return;
+            
+            const body = document.body;
+            
+            // Theme
+            if (context.theme === 'light') body.classList.add('light-theme');
+            else body.classList.remove('light-theme');
+            
+            // Contrast
+            if (context.highContrast) body.classList.add('high-contrast');
+            else body.classList.remove('high-contrast');
+            
+            // Motion
+            if (context.reduceMotion) body.classList.add('reduce-animations');
+            else body.classList.remove('reduce-animations');
+            
+            // Update iframe theme if open
+            const frame = document.getElementById('settings-frame');
+            if (frame && frame.contentWindow) {
+                frame.contentWindow.postMessage({ 
+                    type: 'themeUpdate', 
+                    theme: context.theme 
+                }, '*');
+            }
+        }
+        
         function updateSystemStatusUI(status) {
             if (!status) return;
             
@@ -752,9 +815,15 @@
     
             // 1. Initial Handshake
             if (data.type === 'gurapp-ready') {
-                // Tell Settings App we are the parent and it's ready
+                console.log("[Remote] Settings app ready, sending handshake.");
+                
+                // 1. Tell API it's inside Polygol (Unlocks full screen layout)
+                frame.contentWindow.postMessage({ type: 'gurasuraisu-api-present' }, '*');
+                
+                // 2. Tell Settings App to start
                 frame.contentWindow.postMessage({ type: 'settings-app-ready' }, '*');
-                // Fetch initial data from Host
+                
+                // 3. Populate Data
                 sendCommand('getAllSettings');
             }
     
@@ -992,13 +1061,13 @@
                 } else if (payload.type === 'mediaUpdate') {
                     updateMediaUI(payload.data.metadata, payload.data.playbackState);
                 } else if (payload.type === 'state') {
+                    // Apply Status
+                    if (payload.data.systemStatus && payload.data.systemStatus.context) {
+                        applySystemContext(payload.data.systemStatus.context);
+                    }
                     // Apply Theme
                     if (payload.data.accentColor) {
                         applyTheme(payload.data.accentColor);
-                    }
-                    // Apply Status
-                    if (payload.data.systemStatus) {
-                        updateSystemStatusUI(payload.data.systemStatus);
                     }
                     updateBrightnessUI(payload.data.brightness);
                     if(payload.data.media) {
