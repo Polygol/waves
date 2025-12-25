@@ -652,7 +652,7 @@
             </div>
 
             <!-- Media Player -->
-            <div class="media-player">
+            <div class="media-player" style="display: none;">
                 <img id="media-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="album-art">
                 <div class="track-info">
                     <h3 id="media-title">No Media</h3>
@@ -1066,7 +1066,7 @@
                 if (wp.thumbnail) {
                     item.innerHTML = `<img src="${wp.thumbnail}">`;
                 } else {
-                    item.innerHTML = `<div style="width:100%;height:100%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:white;font-size:12px;">No Preview</div>`;
+                    item.innerHTML = `<div style="width:100%;height:100%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:white;font-size:12px;">Image</div>`;
                 }
                 
                 container.appendChild(item);
@@ -1311,7 +1311,6 @@
                         const player = document.querySelector('.media-player');
                         if(player) player.style.display = 'none';
                     }
-                    // NEW: Handle App UI from full state
                     if (payload.data.appUI) {
                         activeMiniApp = payload.data.appUI;
                         updateMiniAppPill();
