@@ -79,17 +79,21 @@
         /* Emoji Grid */
         .emoji-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            grid-template-columns: repeat(4, 1fr); /* 4 Columns */
+            gap: 12px;
             margin-top: 20px;
         }
         .emoji-btn {
             background: #49454F;
             border: none;
-            border-radius: 16px;
-            font-size: 48px;
-            padding: 20px;
+            border-radius: 12px;
+            font-size: 28px;
+            padding: 0;
+            aspect-ratio: 1 / 1; /* Keep them square */
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .emoji-btn:active { background: #D0BCFF; }
 
@@ -548,7 +552,15 @@
             QrScanner.WORKER_PATH = 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner-worker.min.js';
         }
         
-        const CONFIG = { appId: 'polygol-connect-v1' };
+        const CONFIG = { 
+            appId: 'polygol-connect-v1',
+            trackerUrls: [
+                'wss://tracker.openwebtorrent.com',
+                'wss://tracker.btorrent.xyz',
+                'wss://tracker.webtorrent.dev',
+                'wss://tracker.files.fm:7073/announce'
+            ]
+        };
         let room, sendAction;
         let currentConfig = null;
         let currentRemoteApp = null;
