@@ -290,8 +290,8 @@
             align-items: center;
         }
         .play-pause {
-            background: var(--md-sys-color-on-primary-container);
-            color: var(--md-sys-color-primary-container);
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
             width: 64px; height: 64px;
             border-radius: 32px;
             display: flex; align-items: center; justify-content: center;
@@ -1204,6 +1204,7 @@
                         el.className = 'btn-primary';
                         el.style.background = 'transparent';
                         el.style.border = '1px solid var(--md-sys-color-primary)';
+                        el.style.color = 'var(--md-sys-color-on-background)';
                     } else if (comp.style === 'tonal') {
                         el.className = 'btn-primary';
                         el.style.background = 'var(--md-sys-color-secondary-container)';
