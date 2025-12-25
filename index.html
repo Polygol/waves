@@ -626,6 +626,11 @@
                 </div>
             </div>
 
+            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px;>
+                <span class="material-symbols-rounded">brightness_5</span>
+                <input type="range" id="remote-brightness" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
+            </div>
+
             <!-- Quick Settings -->
             <div class="qs-grid">
                 <button class="qs-btn" id="qs-silent" onclick="toggleQS('silent')">
@@ -667,11 +672,6 @@
                     <span class="material-symbols-rounded" style="font-size: 32px;">settings</span>
                     <span class="label-large">Settings</span>
                 </button>
-            </div>
-    
-            <div class="slider-container">
-                <span class="material-symbols-rounded">brightness_5</span>
-                <input type="range" id="remote-brightness" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
             </div>
 
             <!-- Live Activities & Notifications -->
