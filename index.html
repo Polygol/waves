@@ -459,7 +459,7 @@
             border-radius: 50px;
             color: var(--md-sys-color-on-surface-variant);
             font-weight: 500;
-            transition: background 0.2s, color 0.2s;
+            transition: background 0.2s, color 0.2s, border-radius 0.2s;
         }
         .segment-btn.active {
             background: var(--md-sys-color-surface);
@@ -552,6 +552,7 @@
         .qs-btn.active {
             background: var(--md-sys-color-primary);
             color: var(--md-sys-color-on-primary);
+            border-radius: 28px;
         }
     </style>
 </head>
@@ -626,6 +627,11 @@
             <div class="slider-container" style="margin-top: 0; margin-bottom: 12px;>
                 <span class="material-symbols-rounded">brightness_5</span>
                 <input type="range" id="remote-brightness" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
+            </div>
+
+            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px;>
+                <span class="material-symbols-rounded">thermometer</span>
+                <input type="range" id="remote-temperature" min="-10" max="10" step="1" value="0" onchange="sendCommand('setTemperature', this.value)">
             </div>
 
             <!-- Quick Settings -->
@@ -1077,8 +1083,10 @@
     
             // Update Play/Pause Button Icon
             const playBtnIcon = document.querySelector('.play-pause span');
+            const playBtn = document.querySelector('.play-pause');
             if (playbackState === 'playing') {
                 playBtnIcon.innerText = 'pause';
+                playBtn.borderRadius = '18px';
             } else {
                 playBtnIcon.innerText = 'play_arrow';
             }
