@@ -19,22 +19,47 @@
     <style>
         /* MD3 Token-ish Variables */
         :root {
-            --md-sys-color-background: #141218;
+            /* Base Hue (Default Purple) */
+            --theme-r: 208;
+            --theme-g: 188;
+            --theme-b: 255;
+    
+            /* Derived Colors using CSS Calc for mixing */
+            --md-sys-color-primary: rgb(var(--theme-r), var(--theme-g), var(--theme-b));
+            
+            /* Background: Very dark tint of the accent */
+            --md-sys-color-background: rgb(
+                calc(var(--theme-r) * 0.05 + 10), 
+                calc(var(--theme-g) * 0.05 + 10), 
+                calc(var(--theme-b) * 0.05 + 10)
+            );
+    
+            /* Surface: Slightly lighter tint */
+            --md-sys-color-surface: rgb(
+                calc(var(--theme-r) * 0.08 + 25), 
+                calc(var(--theme-g) * 0.08 + 25), 
+                calc(var(--theme-b) * 0.08 + 25)
+            );
+    
+            /* Surface Variant: Middle tint */
+            --md-sys-color-surface-variant: rgb(
+                calc(var(--theme-r) * 0.15 + 40), 
+                calc(var(--theme-g) * 0.15 + 40), 
+                calc(var(--theme-b) * 0.15 + 40)
+            );
+    
+            /* Containers */
+            --md-sys-color-primary-container: rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.3);
+            --md-sys-color-on-primary-container: rgb(255, 255, 255);
+            
+            --md-sys-color-secondary-container: rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.15);
+            --md-sys-color-on-secondary-container: rgb(230, 230, 230);
+            
             --md-sys-color-on-background: #E6E1E5;
-            --md-sys-color-surface: #1D1B20;
-            --md-sys-color-surface-variant: #49454F;
             --md-sys-color-on-surface: #E6E1E5;
-            --md-sys-color-on-surface-variant: #CAC4D0;
-            --md-sys-color-primary: #D0BCFF;
-            --md-sys-color-on-primary: #381E72;
-            --md-sys-color-primary-container: #4F378B;
-            --md-sys-color-on-primary-container: #EADDFF;
-            --md-sys-color-secondary-container: #4A4458;
-            --md-sys-color-on-secondary-container: #E8DEF8;
             
             --border-radius-lg: 28px;
             --border-radius-md: 16px;
-            --border-radius-sm: 12px;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
@@ -629,16 +654,17 @@
 
         // --- UI Helpers ---
         function applyTheme(rgb) {
-            if (!rgb) return;
+            if (!rgb || rgb.length < 3) return;
             const [r, g, b] = rgb;
+            
             const root = document.documentElement;
             
-            // Simple tonal palette generation
-            root.style.setProperty('--md-sys-color-primary', `rgb(${r}, ${g}, ${b})`);
-            root.style.setProperty('--md-sys-color-primary-container', `rgba(${r}, ${g}, ${b}, 0.3)`);
-            root.style.setProperty('--md-sys-color-on-primary-container', '#ffffff');
+            // Update the base variables, CSS calc() handles the rest
+            root.style.setProperty('--theme-r', r);
+            root.style.setProperty('--theme-g', g);
+            root.style.setProperty('--theme-b', b);
             
-            // Update meta theme color
+            // Update browser chrome color
             const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
             document.querySelector('meta[name="theme-color"]').setAttribute('content', hex);
         }
@@ -667,7 +693,7 @@
                 text.innerText = "Connected";
                 // Request initial state once connected
                 sendCommand('getApps');
-                sendCommand('requestScreenshot');
+                sendCommand('getState'); 
             } else {
                 dot.classList.remove('connected');
                 text.innerText = "Disconnected";
