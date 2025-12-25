@@ -667,18 +667,18 @@
     </div>
 
     <!-- Upload Modal -->
-    <div id="upload-modal" class="screenshot-modal" style="background: rgba(0,0,0,0.9);">
+    <div id="upload-modal" class="screenshot-modal" style="background: var(--md-sys-color-surface);">
         <div style="text-align: center; width: 100%; padding: 20px;">
-            <h2 id="upload-msg">Upload File</h2>
-            <p style="opacity: 0.7; margin-bottom: 30px;">The host is requesting a file.</p>
+            <h2 id="upload-msg">Select items</h2>
+            <p style="opacity: 0.7; margin-bottom: 30px;">Polygol is requesting items.</p>
             
             <input type="file" id="remote-file-input" style="display: none;">
             
-            <button class="btn-primary" onclick="document.getElementById('remote-file-input').click()" style="width: 200px; margin: auto; position: static; border-radius: 50px;">
-                Select File
+            <button class="btn-primary" onclick="document.getElementById('remote-file-input').click()" style="width: 200px; margin: auto; position: static; border-radius: 50px; background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); font-weight: 500; font-family: 'Roboto', sans-serif;">
+                Select
             </button>
             <br><br>
-            <button class="icon-btn" onclick="document.getElementById('upload-modal').classList.remove('open')" style="position: static; border: 1px solid rgba(255,255,255,0.2); border-radius: 50px; width: 48px; height: 48px;">
+            <button class="icon-btn" onclick="document.getElementById('upload-modal').classList.remove('open')" style="position: static; border-radius: 50px; width: 48px; height: 48px; color: var(--md-sys-color-on-primary); background: transparent;">
                 <span class="material-symbols-rounded">close</span>
             </button>
         </div>
