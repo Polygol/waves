@@ -50,10 +50,10 @@
     
             /* Containers */
             --md-sys-color-primary-container: rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.3);
-            --md-sys-color-on-primary-container: rgb(255, 255, 255);
+            --md-sys-color-on-primary: #ffffff; 
             
-            --md-sys-color-secondary-container: rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.15);
-            --md-sys-color-on-secondary-container: rgb(230, 230, 230);
+            --md-sys-color-secondary-container: rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.2);
+            --md-sys-color-on-secondary-container: #E6E1E5; 
             
             --md-sys-color-on-background: #E6E1E5;
             --md-sys-color-on-surface: #E6E1E5;
@@ -85,6 +85,11 @@
             
             --md-sys-color-on-surface: #1C1B1F;
             --md-sys-color-on-surface-variant: #49454F;
+            
+            --md-sys-color-secondary-container: rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.2);
+            --md-sys-color-on-secondary-container: #1d1b20; /* Dark text for light mode */
+            
+            --md-sys-color-on-primary-container: #1d1b20;
         }
         
         /* High Contrast Overrides */
@@ -126,10 +131,10 @@
         .label-medium { font-size: 12px; font-weight: 500; letter-spacing: 0.5px; }
 
         .code-input {
-            background: #49454F;
-            border: 1px solid #938F99;
+            background: var(--md-sys-color-surface-variant) !important;
+            color: var(--md-sys-color-on-surface) !important;
+            border: 1px solid var(--md-sys-color-surface-variant);
             border-radius: 8px;
-            color: white;
             font-family: monospace;
             font-size: 24px;
             text-align: center;
@@ -148,7 +153,7 @@
             margin-top: 20px;
         }
         .emoji-btn {
-            background: #49454F;
+            background: var(--md-sys-color-surface-variant) !important;
             border: none;
             border-radius: 12px;
             font-size: 28px;
@@ -693,16 +698,26 @@
         function applyTheme(rgb) {
             if (!rgb || rgb.length < 3) return;
             const [r, g, b] = rgb;
+            
             const root = document.documentElement;
             
-            // Set base RGB for calculations
+            // 1. Set Base RGB
             root.style.setProperty('--theme-r', r);
             root.style.setProperty('--theme-g', g);
             root.style.setProperty('--theme-b', b);
             
-            // Update Chrome Color
+            // 2. Calculate Luminance (YIQ formula) to determine text color
+            // Returns value between 0 (black) and 255 (white)
+            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            
+            // If color is dark (< 128), text should be white. If bright, text should be black.
+            const onPrimary = (yiq >= 128) ? '#000000' : '#ffffff';
+            root.style.setProperty('--md-sys-color-on-primary', onPrimary);
+            
+            // 3. Update Browser Chrome
             const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-            document.querySelector('meta[name="theme-color"]').setAttribute('content', hex);
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) metaTheme.setAttribute('content', hex);
         }
         
         function showLoading(msg = 'Loading...') {
