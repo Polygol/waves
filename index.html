@@ -268,6 +268,43 @@
             background: var(--md-sys-color-primary);
             border-radius: 50%;
         }
+    
+        .status-bar-remote {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background: var(--md-sys-color-surface);
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+        .status-group { display: flex; gap: 12px; align-items: center; }
+        .status-pill {
+            display: flex; align-items: center; gap: 6px;
+            padding: 4px 10px;
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-pill.active {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+        
+        /* Settings Frame */
+        .settings-frame-container {
+            flex: 1;
+            width: 100%;
+            background: #000; /* Settings app is dark */
+            border-radius: 20px;
+            overflow: hidden;
+            border: none;
+            display: none;
+        }
+        .settings-frame-container.active { display: block; }
+        iframe#settings-frame { width: 100%; height: 100%; border: none; }
 
         /* App Drawer */
         .app-drawer-sheet {
@@ -432,6 +469,18 @@
             </button>
         </div>
 
+        <div id="remote-system-status" class="status-bar-remote">
+            <div class="status-group" id="status-toggles">
+                <!-- Injected via JS -->
+            </div>
+            <div class="status-group">
+                <div class="status-pill" id="battery-pill">
+                    <span class="material-symbols-rounded" style="font-size: 16px;">battery_full</span>
+                    <span>100%</span>
+                </div>
+            </div>
+        </div>
+
         <div id="default-dashboard-ui">
             <!-- Active Mini App Pill -->
             <div id="mini-app-pill" class="mini-app-pill" onclick="openActiveMiniApp()">
@@ -473,6 +522,10 @@
                  <button class="action-card" onclick="toggleAppDrawer()">
                     <span class="material-symbols-rounded" style="font-size: 32px;">apps</span>
                     <span class="label-large">Apps</span>
+                </button>
+                <button class="action-card" onclick="openRemoteSettings()">
+                    <span class="material-symbols-rounded" style="font-size: 32px;">settings</span>
+                    <span class="label-large">Settings</span>
                 </button>
             </div>
     
@@ -520,6 +573,16 @@
         </div>
 
         <div id="app-list-container"></div>
+    </div>
+
+    <!-- Settings View Container -->
+    <div id="settings-ui" class="settings-frame-container">
+        <div class="top-app-bar" style="background: var(--md-sys-color-surface); padding: 10px;">
+            <button class="icon-btn" onclick="closeRemoteSettings()"><span class="material-symbols-rounded">arrow_back</span></button>
+            <span style="font-weight: 500;">System Settings</span>
+            <div style="width: 40px;"></div>
+        </div>
+        <iframe id="settings-frame" src=""></iframe>
     </div>
 
     <!-- Screenshot Modal -->
@@ -570,6 +633,21 @@
         let drawerTab = 'all'; // 'all' or 'mini'
 
         // --- UI Helpers ---
+        function applyTheme(rgb) {
+            if (!rgb) return;
+            const [r, g, b] = rgb;
+            const root = document.documentElement;
+            
+            // Simple tonal palette generation
+            root.style.setProperty('--md-sys-color-primary', `rgb(${r}, ${g}, ${b})`);
+            root.style.setProperty('--md-sys-color-primary-container', `rgba(${r}, ${g}, ${b}, 0.3)`);
+            root.style.setProperty('--md-sys-color-on-primary-container', '#ffffff');
+            
+            // Update meta theme color
+            const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', hex);
+        }
+        
         function showLoading(msg = 'Loading...') {
             const t = document.getElementById('loading-toast');
             t.innerText = msg;
@@ -599,6 +677,86 @@
                 dot.classList.remove('connected');
                 text.innerText = "Disconnected";
             }
+        }
+
+        // --- System Status ---
+        function updateSystemStatusUI(status) {
+            if (!status) return;
+            
+            const container = document.getElementById('status-toggles');
+            container.innerHTML = '';
+            
+            // Helper
+            const addPill = (icon, label, active) => {
+                const pill = document.createElement('div');
+                pill.className = `status-pill ${active ? 'active' : ''}`;
+                pill.innerHTML = `<span class="material-symbols-rounded" style="font-size: 16px;">${icon}</span>`;
+                container.appendChild(pill);
+            };
+    
+            if (status.night) addPill('bedtime', 'Night', true);
+            if (status.silent) addPill('notifications_off', 'Silent', true);
+            if (status.minimal) addPill('filter_tilt_shift', 'Focus', true);
+            if (!status.wifi) addPill('wifi_off', 'Offline', false);
+    
+            // Battery
+            if (status.battery) {
+                const batEl = document.getElementById('battery-pill');
+                const icon = status.battery.charging ? 'battery_charging_full' : status.battery.icon || 'battery_full';
+                batEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 16px;">${icon}</span><span>${status.battery.level}%</span>`;
+            }
+        }
+    
+        // --- Settings Bridge ---
+        function openRemoteSettings() {
+            const frame = document.getElementById('settings-frame');
+            const container = document.getElementById('settings-ui');
+            document.getElementById('default-dashboard-ui').style.display = 'none';
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            
+            // Load the settings app if not already loaded
+            if (!frame.src || frame.src === 'about:blank') {
+                // Point to the hosted settings app
+                frame.src = 'https://polygol.github.io/assets/gurapp/intl/settings/index.html';
+            }
+        }
+
+        // Bridge Logic: Listen for messages from the Settings Iframe
+        window.addEventListener('message', (event) => {
+            const frame = document.getElementById('settings-frame');
+            if (event.source !== frame.contentWindow) return;
+    
+            const data = event.data;
+    
+            // 1. Initial Handshake
+            if (data.type === 'gurapp-ready') {
+                // Tell Settings App we are the parent and it's ready
+                frame.contentWindow.postMessage({ type: 'settings-app-ready' }, '*');
+                // Fetch initial data from Host
+                sendCommand('getAllSettings');
+            }
+    
+            // 2. API Calls from Settings App
+            if (data.action === 'callGurasuraisuFunc') {
+                const func = data.functionName;
+                const args = data.args;
+    
+                if (func === 'setLocalStorageItem') {
+                    // Settings app changing a setting -> Send to Host
+                    sendCommand('setSetting', { key: args[0], value: args[1] });
+                } 
+                else if (func === 'getLocalStorageAll') {
+                    // Settings app asking for storage list -> Send to Host
+                    sendCommand('getAllSettings');
+                }
+                // For simple navigation/UI sounds, ignore or handle locally
+            }
+        });
+    
+        function closeRemoteSettings() {
+            document.getElementById('settings-ui').style.display = 'none';
+            document.getElementById('default-dashboard-ui').style.display = 'block';
         }
 
         function toggleAppDrawer() {
@@ -813,6 +971,14 @@
                 } else if (payload.type === 'mediaUpdate') {
                     updateMediaUI(payload.data.metadata, payload.data.playbackState);
                 } else if (payload.type === 'state') {
+                    // Apply Theme
+                    if (payload.data.accentColor) {
+                        applyTheme(payload.data.accentColor);
+                    }
+                    // Apply Status
+                    if (payload.data.systemStatus) {
+                        updateSystemStatusUI(payload.data.systemStatus);
+                    }
                     updateBrightnessUI(payload.data.brightness);
                     if(payload.data.media) {
                         updateMediaUI(payload.data.media, payload.data.mediaState);
@@ -868,6 +1034,26 @@
                     input.dataset.requestId = requestId || '';
                     
                     modal.classList.add('open');
+                } else if (payload.type === 'settingsData') {
+                    // Forward bulk data to Settings Iframe
+                    const frame = document.getElementById('settings-frame');
+                    if (frame.contentWindow) {
+                        // The settings app expects 'localStorageAllValues' for the list view
+                        // OR specific item updates. For the "Storage" view, it listens for 'localStorageAllValues'.
+                        // For general settings sync, it listens for 'localStorageItemValue'.
+                        
+                        // 1. Send as list (for storage view)
+                        frame.contentWindow.postMessage({ type: 'localStorageAllValues', value: payload.data }, '*');
+                        
+                        // 2. Send as individual updates (to sync toggles/sliders)
+                        payload.data.forEach(item => {
+                            frame.contentWindow.postMessage({ 
+                                type: 'localStorageItemValue', 
+                                key: item.key, 
+                                value: item.value 
+                            }, '*');
+                        });
+                    }
                 }
             });
 
