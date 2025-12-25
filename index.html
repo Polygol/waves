@@ -538,7 +538,7 @@
             margin-bottom: 12px;
         }
         .qs-btn {
-            background: var(--md-sys-color-surface-variant);
+            background: var(--md-sys-color-primary-container);
             border: none;
             border-radius: 50%; /* Circle */
             aspect-ratio: 1/1;
@@ -625,12 +625,12 @@
             <!-- Live Activity Container -->
             <div id="remote-live-activity-container"></div>
 
-            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px;">
+            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px; background: var(--md-sys-color-primary-container);">
                 <span class="material-symbols-rounded">brightness_5</span>
                 <input type="range" id="remote-brightness" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
             </div>
 
-            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px;">
+            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px; background: var(--md-sys-color-primary-container);">
                 <span class="material-symbols-rounded">thermometer</span>
                 <input type="range" id="remote-temperature" min="-10" max="10" step="1" value="0" onchange="sendCommand('setTemperature', this.value)">
             </div>
