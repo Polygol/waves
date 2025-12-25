@@ -524,6 +524,24 @@
         <img id="screenshot-img" src="">
     </div>
 
+    <!-- Upload Modal -->
+    <div id="upload-modal" class="screenshot-modal" style="background: rgba(0,0,0,0.9);">
+        <div style="text-align: center; width: 100%; padding: 20px;">
+            <h2 id="upload-msg">Upload File</h2>
+            <p style="opacity: 0.7; margin-bottom: 30px;">The host is requesting a file.</p>
+            
+            <input type="file" id="remote-file-input" style="display: none;">
+            
+            <button class="btn-primary" onclick="document.getElementById('remote-file-input').click()" style="width: 200px; margin: auto; position: static; border-radius: 50px;">
+                Select File
+            </button>
+            <br><br>
+            <button class="icon-btn" onclick="document.getElementById('upload-modal').classList.remove('open')" style="position: static; border: 1px solid rgba(255,255,255,0.2); border-radius: 50px; width: 48px; height: 48px;">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+        </div>
+    </div>
+
     <script>
         // Manually set the worker path to the CDN URL to prevent CORS/resolution errors
         if (typeof QrScanner !== 'undefined') {
@@ -823,6 +841,17 @@
                     appListData = payload.data;
                     renderAppList(payload.data);
                     updateMiniAppPill(); // Refresh pill in case icon was missing
+                } else if (payload.type === 'requestUpload') {
+                    const { accept, multiple, requestId } = payload.data;
+                    const modal = document.getElementById('upload-modal');
+                    const input = document.getElementById('remote-file-input');
+                    
+                    input.accept = accept || '*/*';
+                    input.multiple = multiple || false;
+                    // Store requestId on input for retrieval during change event
+                    input.dataset.requestId = requestId || '';
+                    
+                    modal.classList.add('open');
                 }
             });
 
@@ -1247,6 +1276,43 @@
                 container.appendChild(card);
             });
         }
+    
+        document.getElementById('remote-file-input').addEventListener('change', async function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            
+            document.getElementById('upload-modal').classList.remove('open');
+            showLoading("Uploading...");
+            
+            const requestId = this.dataset.requestId;
+    
+            for (const file of files) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result; // Data URL
+                    
+                    // Chunking is handled by Trystero implicitly for reasonably sized payloads,
+                    // but extremely large files might need manual chunking. 
+                    // For wallpapers/images, direct send is usually fine.
+                    
+                    sendAction({
+                        auth: currentConfig.k,
+                        type: 'uploadData',
+                        data: {
+                            name: file.name,
+                            type: file.type,
+                            data: base64,
+                            requestId: requestId
+                        }
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            // Clear input
+            this.value = '';
+            setTimeout(hideLoading, 1000);
+        });
 
         // --- Init ---
         const saved = localStorage.getItem('waves_client_config');
