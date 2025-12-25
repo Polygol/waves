@@ -801,7 +801,21 @@
             // Battery
             if (status.battery) {
                 const batEl = document.getElementById('battery-pill');
-                const icon = status.battery.charging ? 'battery_charging_full' : status.battery.icon || 'battery_full';
+                let icon = 'battery_full';
+                
+                if (status.battery.charging) {
+                    icon = 'battery_charging_full';
+                } else {
+                    const lvl = status.battery.level;
+                    if (lvl <= 15) icon = 'battery_1_bar';
+                    else if (lvl <= 30) icon = 'battery_2_bar';
+                    else if (lvl <= 50) icon = 'battery_3_bar';
+                    else if (lvl <= 65) icon = 'battery_4_bar';
+                    else if (lvl <= 85) icon = 'battery_5_bar';
+                    else if (lvl <= 99) icon = 'battery_6_bar';
+                    else icon = 'battery_full';
+                }
+                
                 batEl.innerHTML = `<span class="material-symbols-rounded" style="font-size: 16px;">${icon}</span><span>${status.battery.level}%</span>`;
             }
         }
