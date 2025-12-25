@@ -273,7 +273,7 @@
             align-items: center;
             text-align: center;
             gap: 16px;
-            margin-bottom: 12px;
+            margin-top: 12px;
         }
         .album-art {
             width: 120px; height: 120px;
@@ -611,20 +611,6 @@
 
             <!-- Live Activity Container -->
             <div id="remote-live-activity-container"></div>
-            
-            <!-- Media Player -->
-            <div class="media-player">
-                <img id="media-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="album-art">
-                <div class="track-info">
-                    <h3 id="media-title">No Media</h3>
-                    <p id="media-artist">Not Playing</p>
-                </div>
-                <div class="media-controls">
-                    <button class="icon-btn" onclick="sendMedia('prev')"><span class="material-symbols-rounded" style="font-size: 32px;">skip_previous</span></button>
-                    <button class="play-pause" onclick="sendMedia('playPause')"><span class="material-symbols-rounded" style="font-size: 36px;">play_arrow</span></button>
-                    <button class="icon-btn" onclick="sendMedia('next')"><span class="material-symbols-rounded" style="font-size: 32px;">skip_next</span></button>
-                </div>
-            </div>
 
             <div class="slider-container" style="margin-top: 0; margin-bottom: 12px;>
                 <span class="material-symbols-rounded">brightness_5</span>
@@ -674,6 +660,20 @@
                 </button>
             </div>
 
+            <!-- Media Player -->
+            <div class="media-player">
+                <img id="media-art" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="album-art">
+                <div class="track-info">
+                    <h3 id="media-title">No Media</h3>
+                    <p id="media-artist">Not Playing</p>
+                </div>
+                <div class="media-controls">
+                    <button class="icon-btn" onclick="sendMedia('prev')"><span class="material-symbols-rounded" style="font-size: 32px;">skip_previous</span></button>
+                    <button class="play-pause" onclick="sendMedia('playPause')"><span class="material-symbols-rounded" style="font-size: 36px;">play_arrow</span></button>
+                    <button class="icon-btn" onclick="sendMedia('next')"><span class="material-symbols-rounded" style="font-size: 32px;">skip_next</span></button>
+                </div>
+            </div>
+
             <!-- Live Activities & Notifications -->
             <div id="remote-notifications-area" style="display: none; flex-direction: column; gap: 8px; margin-top: 24px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -685,7 +685,6 @@
 
             <!-- Widget Previews -->
             <div id="remote-widgets-area" style="display: none; flex-direction: column; gap: 8px; margin-top: 24px;">
-                <h2 style="margin:0; margin-bottom: 12px;">Widgets</h2>
                 <div id="remote-widgets-list" class="widget-grid-remote"></div>
             </div>
         </div>
