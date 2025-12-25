@@ -273,10 +273,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 16px;
-            background: var(--md-sys-color-surface);
-            border-radius: 20px;
-            margin-bottom: 16px;
         }
         .status-group { display: flex; gap: 12px; align-items: center; }
         .status-pill {
@@ -464,20 +460,19 @@
                 <div id="status-dot" class="status-dot"></div>
                 <span id="status-text">Connecting...</span>
             </div>
-            <button class="icon-btn" onclick="disconnect()">
-                <span class="material-symbols-rounded">logout</span>
-            </button>
-        </div>
-
-        <div id="remote-system-status" class="status-bar-remote">
-            <div class="status-group" id="status-toggles">
-                <!-- Injected via JS -->
-            </div>
-            <div class="status-group">
-                <div class="status-pill" id="battery-pill">
-                    <span class="material-symbols-rounded" style="font-size: 16px;">battery_full</span>
-                    <span>100%</span>
+            <div id="remote-system-status" class="status-bar-remote">
+                <div class="status-group" id="status-toggles">
+                    <!-- Injected via JS -->
                 </div>
+                <div class="status-group">
+                    <div class="status-pill" id="battery-pill">
+                        <span class="material-symbols-rounded" style="font-size: 16px;">battery_full</span>
+                        <span>100%</span>
+                    </div>
+                </div>
+                <button class="icon-btn" onclick="disconnect()">
+                    <span class="material-symbols-rounded">logout</span>
+                </button>
             </div>
         </div>
 
