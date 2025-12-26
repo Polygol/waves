@@ -1546,6 +1546,21 @@
                         saveDevice(config, payload.deviceName);
                         setStatus(true, payload.deviceName); // Update UI
                     }
+                    
+                    // Only request detailed data once we are officially welcomed.
+                    // This prevents race conditions where commands are sent before auth is registered.
+                    console.log("Welcome received. Requesting sync...");
+                    sendCommand('getState');
+                    setTimeout(() => sendCommand('getApps'), 500); // Stagger requests
+                } else if (payload.type === 'auth_failed') {
+                    // Handle rejection
+                    if (payload.reason === 'profile_missing') {
+                        alert("Connection rejected: You must set up your profile.");
+                        showView('view-profile-setup');
+                    } else {
+                        alert("Incorrect Emoji or Auth Failed");
+                        window.location.reload();
+                    }
                 } else if (payload.type === 'screenshot') {
                     const modalImg = document.getElementById('screenshot-img');
                     if(modalImg) {
@@ -1596,15 +1611,14 @@
                 const d = loadDevices().find(d => d.config.r === config.r);
                 setStatus(true, d ? d.name : "Connected");
                 
-                // 1. Send Hello/Handshake
+                // 1. Send Hello/Handshake ONLY. Do not send commands yet.
+                // Commands sent before the host processes 'hello' will be dropped/ignored.
+                console.log("Peer found. Sending Hello...");
                 sendAction({ 
                     type: 'hello', 
                     auth: config.k,
                     profile: userProfile 
                 }, peerId);
-
-                // 2. Explicitly request state
-                setTimeout(() => sendCommand('getState'), 500);
             });
 
             room.onPeerJoin(() => setStatus(true));
@@ -2193,15 +2207,32 @@
             }
         }
 
+        // --- Keep Alive & Visibility Logic ---
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
-                // If we were connected but session looks stale, verify or reconnect
+                console.log("App foregrounded. Checking connection...");
+                // If we have a config, try to re-establish
                 if (currentConfig && currentConfig.k) {
-                    if (sendAction) {
-                        sendCommand('ping');
-                        setTimeout(() => sendCommand('getState'), 200);
+                    if (room && sendAction) {
+                        // RE-HANDSHAKE: Send Hello again. 
+                        // If the host restarted or cleared peer memory while we were asleep, 
+                        // a simple 'ping' or 'getState' will fail authentication.
+                        // Re-sending hello re-registers us without a full page reload.
+                        const peers = room.getPeers();
+                        if (peers.length > 0) {
+                            peers.forEach(peerId => {
+                                sendAction({ 
+                                    type: 'hello', 
+                                    auth: currentConfig.k,
+                                    profile: userProfile 
+                                }, peerId);
+                            });
+                        } else {
+                            // No peers visible, might be disconnected at network layer
+                            console.log("No peers found. Reconnecting room...");
+                            connect(currentConfig);
+                        }
                     } else {
-                        // Rebuild connection if lost
                         connect(currentConfig);
                     }
                 }
