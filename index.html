@@ -1333,10 +1333,9 @@
             // Send Hello/Auth immediately on join to identify
             room.onPeerJoin((peerId) => {
                 setStatus(true);
-                // Send profile + auth token
                 sendAction({ 
                     type: 'hello', 
-                    auth: config.k, 
+                    auth: currentConfig.k, 
                     profile: userProfile 
                 }, peerId);
                 
