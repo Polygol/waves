@@ -561,7 +561,7 @@
     <div id="remote-wallpaper"></div>
     
     <!-- Loading Toast -->
-    <div id="loading-toast" class="loading-toast">Loading...</div>
+    <div id="loading-toast" class="loading-toast">Loading</div>
 
     <!-- PROFILE SETUP VIEW -->
     <div id="view-profile-setup" class="view">
@@ -638,7 +638,7 @@
         <div class="top-app-bar">
             <div class="connection-status">
                 <div id="status-dot" class="status-dot"></div>
-                <span id="status-text">Connecting...</span>
+                <span id="status-text">Connecting</span>
             </div>
             <div id="remote-system-status" class="status-bar-remote">
                 <div class="status-group" id="status-toggles">
@@ -670,7 +670,7 @@
             <div id="remote-live-activity-container"></div>
 
             <div class="slider-container" style="margin-top: 0; margin-bottom: 12px; background: var(--md-sys-color-primary-container);">
-                <span class="material-symbols-rounded">brightness_5</span>
+                <span class="material-symbols-rounded">sunny</span>
                 <input type="range" id="remote-brightness" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
             </div>
 
@@ -691,7 +691,7 @@
                     <span class="material-symbols-rounded">filter_tilt_shift</span>
                 </button>
                 <button class="qs-btn" id="qs-theme" onclick="toggleQS('theme')">
-                    <span class="material-symbols-rounded">light_mode</span>
+                    <span class="material-symbols-rounded">radio_button_partial</span>
                 </button>
             </div>
 
@@ -783,7 +783,7 @@
             <button class="icon-btn" onclick="toggleWallpaperSheet()"><span class="material-symbols-rounded">close</span></button>
         </div>
         <div id="wallpaper-list-container" class="wallpaper-grid">
-            <p>Loading...</p>
+            <p>Loading</p>
         </div>
     </div>
 
@@ -794,14 +794,13 @@
             <button class="icon-btn" onclick="toggleAnnouncementSheet()"><span class="material-symbols-rounded">close</span></button>
         </div>
     
-        <p style="opacity: 0.7; margin-bottom: 10px;">Message</p>
-        <textarea id="announce-input" class="code-input" style="text-align: left; font-size: 18px; letter-spacing: normal; text-transform: none; min-height: 120px; font-family: 'Inter', sans-serif;" placeholder="Type something..."></textarea>
+        <textarea id="announce-input" class="code-input" style="text-align: left; font-size: 18px; letter-spacing: normal; text-transform: none; min-height: 120px; font-family: 'Inter', sans-serif;" placeholder="Message"></textarea>
     
         <div class="filled-card" style="margin-top: 16px; cursor: pointer;" onclick="toggleAnnounceTTS()">
             <span class="material-symbols-rounded">record_voice_over</span>
             <div style="flex:1; font-weight:500;">Read aloud</div>
             <!-- Checkbox Logic -->
-            <span id="announce-tts-icon" class="material-symbols-rounded" style="color: var(--md-sys-color-primary);">check_circle</span>
+            <span id="announce-tts-icon" class="material-symbols-rounded" style="color: var(--md-sys-color-on-surface);">check_circle</span>
         </div>
     
         <button class="btn-primary" onclick="sendAnnouncement()">
@@ -960,7 +959,7 @@
             if (metaTheme) metaTheme.setAttribute('content', hex);
         }
         
-        function showLoading(msg = 'Loading...') {
+        function showLoading(msg = 'Loading') {
             const t = document.getElementById('loading-toast');
             t.innerText = msg;
             t.classList.add('show');
@@ -1296,7 +1295,7 @@
                         // and prepare to show the Remote UI
                         sendCommand('launchAppSilently', { url: app.url });
                         pendingAppLaunch = app.name;
-                        showLoading(`Opening ${app.name}...`);
+                        showLoading(`Opening ${app.name}`);
                     } else {
                         // Just launching on host, no local loading needed
                         sendCommand('launchApp', { url: app.url });
@@ -1345,11 +1344,9 @@
             
             if (announceTTS) {
                 icon.innerText = 'check_circle';
-                icon.style.color = 'var(--md-sys-color-primary)';
                 icon.style.opacity = '1';
             } else {
                 icon.innerText = 'radio_button_unchecked';
-                icon.style.color = 'var(--md-sys-color-on-surface)';
                 icon.style.opacity = '0.5';
             }
         }
@@ -1390,7 +1387,7 @@
         // 1. New Connection Handshake
         function startHandshake(roomId) {
             console.log("Starting handshake for room:", roomId);
-            showLoading("Connecting...");
+            showLoading("Connecting");
             
             room = window.Trystero.joinRoom(CONFIG, roomId);
             const [send, get] = room.makeAction('waves-cmd');
@@ -1443,7 +1440,7 @@
             const devices = loadDevices();
             const dev = devices.find(d => d.config.r === config.r);
             if(dev) {
-                setStatus(false, dev.name + " (Connecting...)"); // Show name while connecting
+                setStatus(false, dev.name + " (Connecting)"); // Show name while connecting
             }
 
             console.log("Starting secure session...");
@@ -1918,7 +1915,7 @@
                 btn.onclick = () => {
                     // Send Answer
                     sendFunc({ type: 'verify', answer: emoji }, peerId);
-                    container.innerHTML = '<p style="grid-column: span 2; text-align: center; color: white;">Verifying...</p>';
+                    container.innerHTML = '<p style="grid-column: span 2; text-align: center; color: white;">Verifying</p>';
                 };
                 container.appendChild(btn);
             });
@@ -2131,7 +2128,7 @@
             if (files.length === 0) return;
             
             document.getElementById('upload-modal').classList.remove('open');
-            showLoading("Uploading...");
+            showLoading("Sending");
             
             const requestId = this.dataset.requestId;
     
