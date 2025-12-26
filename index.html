@@ -600,6 +600,9 @@
                 <button class="btn-primary" style="background: var(--md-sys-color-surface-variant); color: var(--md-sys-color-on-surface); margin-top: 20px;" onclick="showNewDeviceInput()">
                     <span class="material-symbols-rounded">add</span> Pair New Device
                 </button>
+                <button class="icon-btn" style="width: 100%; margin-top: 10px; font-size: 14px; opacity: 0.7; border-radius: 20px;" onclick="editProfile()">
+                    <span class="material-symbols-rounded" style="font-size: 16px; vertical-align: middle; margin-right: 5px;">edit</span> Edit Profile
+                </button>
             </div>
 
             <!-- New Device Input Container -->
@@ -874,19 +877,37 @@
         }
 
         function saveProfile() {
-            const name = document.getElementById('profile-name-input').value.trim();
-            const avatar = document.getElementById('profile-avatar-preview').src;
+            const nameInput = document.getElementById('profile-name-input');
+            const avatarImg = document.getElementById('profile-avatar-preview');
+            
+            const name = nameInput.value.trim();
+            const avatar = avatarImg.src;
             
             if (!name) {
                 alert("Please enter a name.");
                 return;
             }
-
+        
             userProfile = { name, avatar };
             localStorage.setItem('waves_user_profile', JSON.stringify(userProfile));
             
-            // Proceed to main screen
-            checkInitState();
+            // IF we are currently connected to a host, send an immediate ping 
+            // with the new profile so the TV updates instantly.
+            if (sendAction && currentConfig) {
+                sendCommand('ping'); // The ping command now carries the profile data
+                showView('view-remote'); // Go back to remote
+            } else {
+                // Otherwise go to device list
+                checkInitState();
+            }
+        }
+        
+        function editProfile() {
+            if (userProfile) {
+                document.getElementById('profile-name-input').value = userProfile.name;
+                document.getElementById('profile-avatar-preview').src = userProfile.avatar;
+            }
+            showView('view-profile-setup');
         }
 
         // --- UI Helpers ---
@@ -930,16 +951,23 @@
             document.getElementById(id).classList.add('active');
         }
         
-        function setStatus(connected) {
+        function setStatus(connected, label = null) {
             const dot = document.getElementById('status-dot');
             const text = document.getElementById('status-text');
             if (!dot || !text) return;
+            
             if (connected) {
                 dot.classList.add('connected');
-                text.innerText = "Connected";
-                // Request initial state once connected
-                sendCommand('getApps');
-                sendCommand('getState'); 
+                // Use provided label, or find name from storage, or default
+                if (label) {
+                    text.innerText = label;
+                } else if (currentConfig) {
+                    const devices = loadDevices();
+                    const dev = devices.find(d => d.config.r === currentConfig.r);
+                    text.innerText = dev ? dev.name : "Connected";
+                } else {
+                    text.innerText = "Connected";
+                }
             } else {
                 dot.classList.remove('connected');
                 text.innerText = "Disconnected";
@@ -1350,7 +1378,7 @@
             const devices = loadDevices();
             const dev = devices.find(d => d.config.r === config.r);
             if(dev) {
-                // We could update the UI header here with the connected device name
+                setStatus(false, dev.name + " (Connecting...)"); // Show name while connecting
             }
 
             console.log("Starting secure session...");
@@ -1459,6 +1487,7 @@
                     // Host sent updated device name
                     if (payload.deviceName) {
                         saveDevice(config, payload.deviceName);
+                        setStatus(true, payload.deviceName); // Update UI
                     }
                 } else if (payload.type === 'screenshot') {
                     const modalImg = document.getElementById('screenshot-img');
@@ -1507,7 +1536,8 @@
             });
 
             room.onPeerJoin(() => {
-                setStatus(true);
+                const d = loadDevices().find(d => d.config.r === config.r);
+                setStatus(true, d ? d.name : "Connected");
                 sendCommand('getApps');
                 sendCommand('getState'); 
             });
