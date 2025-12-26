@@ -729,9 +729,9 @@
                     <span class="material-symbols-rounded" style="font-size: 32px;">filter_vintage</span>
                     <span class="label-large">Wallpaper</span>
                 </button>
-                <button class="action-card" onclick="openRemoteSettings()" style="pointer-events: none;">
-                    <span class="material-symbols-rounded" style="font-size: 32px;">settings</span>
-                    <span class="label-large">Settings</span>
+                <button class="action-card" onclick="openAnnouncementSheet()">
+                    <span class="material-symbols-rounded" style="font-size: 32px;">campaign</span>
+                    <span class="label-large">Announce</span>
                 </button>
             </div>
 
@@ -784,6 +784,28 @@
         <div id="wallpaper-list-container" class="wallpaper-grid">
             <p>Loading...</p>
         </div>
+    </div>
+
+    <!-- Announcement Sheet -->
+    <div id="announce-sheet" class="app-drawer-sheet">
+        <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
+            <h2>Announce</h2>
+            <button class="icon-btn" onclick="toggleAnnouncementSheet()"><span class="material-symbols-rounded">close</span></button>
+        </div>
+    
+        <p style="opacity: 0.7; margin-bottom: 10px;">Message</p>
+        <textarea id="announce-input" class="code-input" style="text-align: left; font-size: 18px; letter-spacing: normal; text-transform: none; min-height: 120px; font-family: 'Roboto', sans-serif;" placeholder="Type something..."></textarea>
+    
+        <div class="filled-card" style="margin-top: 16px; cursor: pointer;" onclick="toggleAnnounceTTS()">
+            <span class="material-symbols-rounded">record_voice_over</span>
+            <div style="flex:1; font-weight:500;">Read aloud</div>
+            <!-- Checkbox Logic -->
+            <span id="announce-tts-icon" class="material-symbols-rounded" style="color: var(--md-sys-color-primary);">check_circle</span>
+        </div>
+    
+        <button class="btn-primary" onclick="sendAnnouncement()">
+            <span class="material-symbols-rounded">send</span> Send
+        </button>
     </div>
 
     <!-- Settings View Container -->
@@ -843,6 +865,7 @@
         let appListData = [];
         let drawerTab = 'all'; // 'all' or 'mini'
         let userProfile = null; // { name, avatar }
+        let announceTTS = true; // Default state
 
         function loadUserProfile() {
             const raw = localStorage.getItem('waves_user_profile');
@@ -1302,6 +1325,47 @@
                 `;
                 container.appendChild(div);
             });
+        }
+        
+        function openAnnouncementSheet() {
+            document.getElementById('announce-sheet').classList.add('open');
+            // Focus input after transition
+            setTimeout(() => document.getElementById('announce-input').focus(), 300);
+        }
+        
+        function toggleAnnouncementSheet() {
+            document.getElementById('announce-sheet').classList.remove('open');
+            document.getElementById('announce-input').blur();
+        }
+        
+        function toggleAnnounceTTS() {
+            announceTTS = !announceTTS;
+            const icon = document.getElementById('announce-tts-icon');
+            
+            if (announceTTS) {
+                icon.innerText = 'check_circle';
+                icon.style.color = 'var(--md-sys-color-primary)';
+                icon.style.opacity = '1';
+            } else {
+                icon.innerText = 'radio_button_unchecked';
+                icon.style.color = 'var(--md-sys-color-on-surface)';
+                icon.style.opacity = '0.5';
+            }
+        }
+        
+        function sendAnnouncement() {
+            const text = document.getElementById('announce-input').value.trim();
+            if (!text) return;
+        
+            // Send command with TTS preference
+            sendCommand('announce', { 
+                text: text, 
+                tts: announceTTS 
+            });
+        
+            // Cleanup
+            document.getElementById('announce-input').value = "";
+            toggleAnnouncementSheet();
         }
 
         // --- Networking ---
