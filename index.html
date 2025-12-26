@@ -14,7 +14,7 @@
         window.dispatchEvent(new Event('trystero-ready'));
     </script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet">
 
     <style>
         /* MD3 Token-ish Variables */
@@ -111,7 +111,7 @@
         body {
             background-color: var(--md-sys-color-background);
             color: var(--md-sys-color-on-background);
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
             height: 100vh;
@@ -135,12 +135,10 @@
             color: var(--md-sys-color-on-surface) !important;
             border: 1px solid var(--md-sys-color-surface-variant);
             border-radius: 8px;
-            font-family: monospace;
             font-size: 24px;
             text-align: center;
             padding: 16px;
             width: 100%;
-            text-transform: uppercase;
             letter-spacing: 4px;
             margin: 20px 0;
         }
@@ -305,6 +303,7 @@
         /* Quick Actions Grid */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .action-card {
+            font-family: 'Inter', sans-serif;
             background: var(--md-sys-color-surface-variant);
             border-radius: 28px;
             padding: 20px;
@@ -316,7 +315,7 @@
             color: var(--md-sys-color-on-surface);
             border: none;
         }
-        .action-card:active { background: #5f5b66; }
+        .action-card:active { background: var(--md-sys-color-primary); }
 
         /* Brightness Slider */
         .slider-container {
@@ -579,7 +578,7 @@
             </div>
             <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="handleAvatarUpload(this)">
 
-            <input type="text" id="profile-name-input" class="code-input" placeholder="Your Name" style="text-align: left; font-family: 'Roboto'; letter-spacing: normal; font-size: 18px;">
+            <input type="text" id="profile-name-input" class="code-input" placeholder="Your Name" style="text-align: left; font-family: 'Inter'; letter-spacing: normal; font-size: 18px;">
             
             <button class="btn-primary" onclick="saveProfile()" style="margin-top: 20px;">
                 Continue
@@ -794,7 +793,7 @@
         </div>
     
         <p style="opacity: 0.7; margin-bottom: 10px;">Message</p>
-        <textarea id="announce-input" class="code-input" style="text-align: left; font-size: 18px; letter-spacing: normal; text-transform: none; min-height: 120px; font-family: 'Roboto', sans-serif;" placeholder="Type something..."></textarea>
+        <textarea id="announce-input" class="code-input" style="text-align: left; font-size: 18px; letter-spacing: normal; text-transform: none; min-height: 120px; font-family: 'Inter', sans-serif;" placeholder="Type something..."></textarea>
     
         <div class="filled-card" style="margin-top: 16px; cursor: pointer;" onclick="toggleAnnounceTTS()">
             <span class="material-symbols-rounded">record_voice_over</span>
@@ -832,7 +831,7 @@
             
             <input type="file" id="remote-file-input" style="display: none;">
             
-            <button class="btn-primary" onclick="document.getElementById('remote-file-input').click()" style="width: 200px; margin: auto; position: static; border-radius: 50px; background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); font-weight: 500; font-family: 'Roboto', sans-serif;">
+            <button class="btn-primary" onclick="document.getElementById('remote-file-input').click()" style="width: 200px; margin: auto; position: static; border-radius: 50px; background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); font-weight: 500; font-family: 'Inter', sans-serif;">
                 Select
             </button>
             <br><br>
