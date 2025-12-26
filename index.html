@@ -1831,10 +1831,12 @@
 
         function sendCommand(type, data = null) {
             if(!sendAction) return;
+            
             sendAction({
                 auth: currentConfig.k,
                 type: type,
-                data: data
+                data: data,
+                profile: userProfile
             });
         }
 
