@@ -1601,7 +1601,6 @@
             room.onPeerJoin(() => {
                 const d = loadDevices().find(d => d.config.r === config.r);
                 setStatus(true, d ? d.name : "Connected");
-                sendCommand('getApps');
                 sendCommand('getState'); 
             });
 
