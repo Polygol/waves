@@ -184,6 +184,7 @@
         }
 
         .btn-primary {
+            font-family: 'Inter', sans-serif;
             background: var(--md-sys-color-primary);
             color: var(--md-sys-color-on-primary);
             border-radius: 100px;
@@ -201,6 +202,7 @@
         }
 
         .icon-btn {
+            font-family: 'Inter', sans-serif;
             background: transparent;
             border: none;
             color: var(--md-sys-color-on-surface-variant);
@@ -374,7 +376,7 @@
             background: var(--md-sys-color-surface);
             border-radius: 28px 28px 0 0;
             padding: 24px;
-            height: 100vh;
+            height: 100%;
             overflow-y: auto;
             transform: translateY(100%) translateX(-50%);
             transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
@@ -651,7 +653,7 @@
                     </div>
                 </div>
                 <button class="icon-btn" onclick="disconnect()">
-                    <span class="material-symbols-rounded">logout</span>
+                    <span class="material-symbols-rounded">close</span>
                 </button>
             </div>
         </div>
@@ -2027,7 +2029,7 @@
                 // Delete button
                 const delBtn = document.createElement('button');
                 delBtn.className = 'icon-btn';
-                delBtn.innerHTML = '<span class="material-symbols-rounded">delete</span>';
+                delBtn.innerHTML = '<span class="material-symbols-rounded">cancel</span>';
                 delBtn.onclick = (e) => {
                     e.stopPropagation();
                     removeDevice(dev.id);
