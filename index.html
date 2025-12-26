@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Waves (Beta)</title>
+    <title>Waves</title>
     <link id="favicon" rel="icon" type="image/png" href="favicon.png">
     <meta name="theme-color" content="#141218">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -566,19 +566,35 @@
     <div id="view-setup" class="view active">
         <div class="setup-content">
             <span class="material-symbols-rounded" style="font-size: 64px; color: var(--md-sys-color-primary);">cell_tower</span>
-            <h1 style="margin-top:16px;">Waves (Beta)</h1>
+            <h1 style="margin-top:16px;">Waves</h1>
             <p style="opacity: 0.7;">Control your Polygol display</p>
-            <p style="opacity: 0.7;">Open Settings > Connections > Show Code to start pairing</p>
-            <p style="opacity: 0.7; text-align:center;">Enter the code shown on the Display</p>
             
-            <input type="text" id="input-code" class="code-input" placeholder="ABCD1234" maxlength="8">
-            
-            <button class="btn-primary" id="btn-connect" style="margin-top:0;">
-                Connect
-            </button>
+            <!-- Device List Container -->
+            <div id="device-list-container" style="width: 100%; display: none; margin-top: 24px;">
+                <div id="device-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                <button class="btn-primary" style="background: var(--md-sys-color-surface-variant); color: var(--md-sys-color-on-surface); margin-top: 20px;" onclick="showNewDeviceInput()">
+                    <span class="material-symbols-rounded">add</span> Pair New Device
+                </button>
+            </div>
+
+            <!-- New Device Input Container -->
+            <div id="new-device-container" style="width: 100%;">
+                <p style="opacity: 0.7;">Open Settings > Connections > Show Code to start pairing</p>
+                <p style="opacity: 0.7; text-align:center;">Enter the code shown on the Display</p>
+                
+                <input type="text" id="input-code" class="code-input" placeholder="ABCD1234" maxlength="8">
+                
+                <button class="btn-primary" id="btn-connect" style="margin-top:0;">
+                    Connect
+                </button>
+
+                <button id="cancel-add-btn" class="icon-btn" style="margin-top: 20px; display: none; width: 100%; border-radius: 50px;" onclick="showDeviceList()">
+                    Cancel
+                </button>
+            </div>
         </div>
     </div>
-
+    
     <!-- 2. VERIFICATION VIEW -->
     <div id="view-auth" class="view">
         <div class="setup-content">
@@ -1207,11 +1223,15 @@
         // 1. New Connection Handshake
         function startHandshake(roomId) {
             console.log("Starting handshake for room:", roomId);
+            showLoading("Connecting...");
+            
             room = window.Trystero.joinRoom(CONFIG, roomId);
             const [send, get] = room.makeAction('waves-cmd');
             
             // Handle Auth Messages
             get((payload, peerId) => {
+                hideLoading();
+                
                 if (payload.type === 'challenge') {
                     renderEmojiGrid(payload.options, peerId, send);
                     showView('view-auth');
@@ -1219,7 +1239,9 @@
                 else if (payload.type === 'authorized') {
                     // Auth Success! Save keys and switch to remote view
                     const newConfig = { r: roomId, k: payload.psk };
-                    localStorage.setItem('waves_client_config', JSON.stringify(newConfig));
+                    
+                    // SAVE DEVICE TO LIST
+                    saveDevice(newConfig);
                     
                     // Cleanup handshake listeners and start full session
                     room.leave(); 
@@ -1241,7 +1263,7 @@
                 send({ type: 'hello' }, peerId);
             });
         }
-
+        
         // 2. Authenticated Session (The actual remote control)
         function startRemoteSession(config) {
             currentConfig = config;
@@ -1739,8 +1761,110 @@
         }
         
         function disconnect() {
-            localStorage.removeItem('waves_client_config');
+            // Just reload to go back to device list (session is ephemeral)
             window.location.reload();
+        }
+
+        // --- Device Management ---
+        function loadDevices() {
+            try {
+                const raw = localStorage.getItem('waves_client_devices');
+                return raw ? JSON.parse(raw) : [];
+            } catch(e) { return []; }
+        }
+
+        function saveDevice(config, name = null) {
+            const devices = loadDevices();
+            // Check if exists
+            const existingIndex = devices.findIndex(d => d.config.r === config.r);
+            
+            const deviceName = name || `Device ${config.r.substring(0,4)}`;
+            
+            if (existingIndex >= 0) {
+                devices[existingIndex].config = config; // Update PSK if changed
+                devices[existingIndex].lastUsed = Date.now();
+            } else {
+                devices.push({
+                    id: config.r, // Use Room ID as ID
+                    name: deviceName,
+                    config: config,
+                    lastUsed: Date.now()
+                });
+            }
+            localStorage.setItem('waves_client_devices', JSON.stringify(devices));
+        }
+
+        function removeDevice(id) {
+            if(!confirm("Forget this device?")) return;
+            let devices = loadDevices();
+            devices = devices.filter(d => d.id !== id);
+            localStorage.setItem('waves_client_devices', JSON.stringify(devices));
+            renderDeviceList();
+        }
+
+        function renderDeviceList() {
+            const devices = loadDevices().sort((a, b) => b.lastUsed - a.lastUsed);
+            const list = document.getElementById('device-list');
+            const container = document.getElementById('device-list-container');
+            const inputContainer = document.getElementById('new-device-container');
+            
+            if (devices.length === 0) {
+                container.style.display = 'none';
+                inputContainer.style.display = 'block';
+                document.getElementById('cancel-add-btn').style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            inputContainer.style.display = 'none';
+            list.innerHTML = '';
+
+            devices.forEach(dev => {
+                const item = document.createElement('div');
+                item.className = 'filled-card';
+                item.style.cursor = 'pointer';
+                item.style.marginBottom = '0';
+                
+                // Click handler on the text area to connect
+                const contentDiv = document.createElement('div');
+                contentDiv.style.flex = '1';
+                contentDiv.style.display = 'flex';
+                contentDiv.style.alignItems = 'center';
+                contentDiv.style.gap = '12px';
+                contentDiv.innerHTML = `
+                    <span class="material-symbols-rounded" style="background:var(--md-sys-color-primary); color:var(--md-sys-color-on-primary); padding:8px; border-radius:50%;">desktop_windows</span>
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="font-weight:500; font-size:16px;">${dev.name}</span>
+                        <span style="font-size:12px; opacity:0.6;">ID: ${dev.id}</span>
+                    </div>
+                `;
+                contentDiv.onclick = () => connect(dev.config);
+
+                // Delete button
+                const delBtn = document.createElement('button');
+                delBtn.className = 'icon-btn';
+                delBtn.innerHTML = '<span class="material-symbols-rounded">delete</span>';
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeDevice(dev.id);
+                };
+
+                item.appendChild(contentDiv);
+                item.appendChild(delBtn);
+                list.appendChild(item);
+            });
+        }
+
+        function showNewDeviceInput() {
+            document.getElementById('device-list-container').style.display = 'none';
+            document.getElementById('new-device-container').style.display = 'block';
+            // Show cancel button if we have devices to go back to
+            const hasDevices = loadDevices().length > 0;
+            document.getElementById('cancel-add-btn').style.display = hasDevices ? 'inline-flex' : 'none';
+        }
+
+        function showDeviceList() {
+            renderDeviceList();
         }
 
         // --- QR Logic ---
@@ -1854,14 +1978,24 @@
         });
 
         // --- Init ---
-        const saved = localStorage.getItem('waves_client_config');
-        if(saved) {
+        // 1. Migration for old users
+        const oldConfig = localStorage.getItem('waves_client_config');
+        if(oldConfig) {
             try {
-                const config = JSON.parse(saved);
-                if(config.r && config.k) connect(config);
-            } catch(e) {
-                console.error("Bad config", e);
-            }
+                const c = JSON.parse(oldConfig);
+                if(c.r && c.k) {
+                    saveDevice(c);
+                    localStorage.removeItem('waves_client_config');
+                }
+            } catch(e) {}
+        }
+
+        // 2. Load View
+        const devices = loadDevices();
+        if (devices.length > 0) {
+            renderDeviceList();
+        } else {
+            showNewDeviceInput();
         }
     </script>
 </body>
