@@ -2100,6 +2100,12 @@
 
         // Run on load
         checkInitState();
+
+        setInterval(() => {
+            if (sendAction && currentConfig && currentConfig.k) {
+                sendCommand('ping'); // Send heartbeat
+            }
+        }, 4000);
     </script>
 </body>
 </html>
