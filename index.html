@@ -1333,14 +1333,11 @@
             // Send Hello/Auth immediately on join to identify
             room.onPeerJoin((peerId) => {
                 setStatus(true);
-                sendAction({ 
+                send({ 
                     type: 'hello', 
-                    auth: currentConfig.k, 
+                    auth: null, // No key yet
                     profile: userProfile 
                 }, peerId);
-                
-                sendCommand('getApps');
-                sendCommand('getState'); 
             });
         }
         
