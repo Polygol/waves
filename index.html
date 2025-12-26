@@ -1420,16 +1420,6 @@
                     window.location.reload();
                 }
             });
-
-            // Send Hello/Auth immediately on join to identify
-            room.onPeerJoin((peerId) => {
-                setStatus(true);
-                send({ 
-                    type: 'hello', 
-                    auth: null, // No key yet
-                    profile: userProfile 
-                }, peerId);
-            });
         }
         
         // 2. Authenticated Session (The actual remote control)
@@ -1445,6 +1435,10 @@
             }
 
             console.log("Starting secure session...");
+            if (room) {
+                try { room.leave(); } catch(e){}
+            }
+            
             room = window.Trystero.joinRoom(CONFIG, config.r);
             
             // Setup Channels
@@ -1598,10 +1592,19 @@
                 }
             });
 
-            room.onPeerJoin(() => {
+            room.onPeerJoin((peerId) => {
                 const d = loadDevices().find(d => d.config.r === config.r);
                 setStatus(true, d ? d.name : "Connected");
-                sendCommand('getState'); 
+                
+                // 1. Send Hello/Handshake
+                sendAction({ 
+                    type: 'hello', 
+                    auth: config.k,
+                    profile: userProfile 
+                }, peerId);
+
+                // 2. Explicitly request state
+                setTimeout(() => sendCommand('getState'), 500);
             });
 
             room.onPeerJoin(() => setStatus(true));
@@ -2190,14 +2193,31 @@
             }
         }
 
-        // Run on load
-        checkInitState();
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                // If we were connected but session looks stale, verify or reconnect
+                if (currentConfig && currentConfig.k) {
+                    if (sendAction) {
+                        sendCommand('ping');
+                        setTimeout(() => sendCommand('getState'), 200);
+                    } else {
+                        // Rebuild connection if lost
+                        connect(currentConfig);
+                    }
+                }
+            }
+        });
 
+        // Heartbeat Loop
         setInterval(() => {
             if (sendAction && currentConfig && currentConfig.k) {
-                sendCommand('ping'); // Send heartbeat
+                // Sending ping keeps NAT mappings alive
+                sendCommand('ping'); 
             }
-        }, 4000);
+        }, 3000);
+
+        // Run on load
+        checkInitState();
     </script>
 </body>
 </html>
