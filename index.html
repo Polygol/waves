@@ -1400,8 +1400,16 @@
             console.log("Starting handshake for room:", roomId);
             showLoading("Connecting");
             
+            if (room) {
+                try { room.leave(); } catch(e) {}
+            }
+
             room = window.Trystero.joinRoom(CONFIG, roomId);
             const [send, get] = room.makeAction('waves-cmd');
+            
+            // Even if we don't process updates during handshake, we must acknowledge the action type
+            // to prevent Trystero from throwing an error if the host broadcasts state.
+            room.makeAction('waves-update'); 
             
             // Handle Auth Messages
             get((payload, peerId) => {
@@ -1422,13 +1430,28 @@
                     setTimeout(() => startRemoteSession(newConfig), 500);
                 } 
                 else if (payload.type === 'auth_failed') {
-                    alert("Incorrect Emoji");
-                    window.location.reload();
+                    if (payload.reason === 'profile_missing') {
+                        alert("Connection rejected: You must set a profile name.");
+                        showView('view-profile-setup');
+                    } else {
+                        alert("Incorrect Emoji");
+                        window.location.reload();
+                    }
                 }
                 else if (payload.type === 'discovery_disabled') {
                     alert("Connection failed: The host device is not accepting new devices");
                     window.location.reload();
                 }
+            });
+
+            // Send Hello/Auth immediately on join to identify
+            room.onPeerJoin((peerId) => {
+                setStatus(true);
+                send({ 
+                    type: 'hello', 
+                    auth: null, // No key yet
+                    profile: userProfile 
+                }, peerId);
             });
         }
         
