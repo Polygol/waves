@@ -1474,6 +1474,9 @@
             
             room = window.Trystero.joinRoom(CONFIG, config.r);
             
+            // Track handshake status per peer
+            let peerHandshakeStatus = {}; 
+
             // Setup Channels
             const [sendCmd, getCmd] = room.makeAction('waves-cmd');
             sendAction = sendCmd;
@@ -1482,7 +1485,6 @@
             // Listen for State Updates (Media, Brightness)
             getUpd((payload) => {
                 if (payload.type === 'appUI') {
-                    // Store active app state regardless of view
                     if (payload.data && payload.data.appName) {
                         activeMiniApp = payload.data;
                     } else {
@@ -1490,7 +1492,6 @@
                     }
                     updateMiniAppPill();
 
-                    // Only switch view if this is the app the user requested
                     if (payload.data && payload.data.appName) {
                         if (pendingAppLaunch === payload.data.appName || currentRemoteApp === payload.data.appName) {
                             renderAppUI(payload.data.appName, payload.data.components);
@@ -1498,27 +1499,23 @@
                             hideLoading();
                         }
                     } else {
-                        // Host cleared UI (e.g. app closed), only exit if we are in that app
                         if (currentRemoteApp) { 
                             exitAppUI(); 
                         }
                     }
                 } else if (payload.type === 'appUIUpdate') {
-                    // Handle partial updates
                     if (currentRemoteApp && payload.data.appName === currentRemoteApp) {
                         updateAppComponents(payload.data.updates);
                     }
                 } else if (payload.type === 'mediaUpdate') {
                     updateMediaUI(payload.data.metadata, payload.data.playbackState);
                 } else if (payload.type === 'state') {
-                    // Apply Status
                     if (payload.data.systemStatus) {
                         if (payload.data.systemStatus.context) {
                             applySystemContext(payload.data.systemStatus.context);
                         }
                         updateSystemStatusUI(payload.data.systemStatus);
                     }
-                    // Apply Theme
                     if (payload.data.accentColor) {
                         applyTheme(payload.data.accentColor);
                     }
@@ -1530,14 +1527,12 @@
                     if(payload.data.media) {
                         updateMediaUI(payload.data.media, payload.data.mediaState);
                     } else {
-                        // Explicitly hide if media is null in state
                         const player = document.querySelector('.media-player');
                         if(player) player.style.display = 'none';
                     }
                     if (payload.data.appUI) {
                         activeMiniApp = payload.data.appUI;
                         updateMiniAppPill();
-                        // If we were waiting for this specific app, open it now
                         if (pendingAppLaunch === payload.data.appUI.appName) {
                             renderAppUI(payload.data.appUI.appName, payload.data.appUI.components);
                             pendingAppLaunch = null;
@@ -1547,14 +1542,12 @@
                         activeMiniApp = null;
                         updateMiniAppPill();
                     }
-                    // NEW: Handle Notifications
                     if (payload.data.notifications) {
                         renderRemoteNotifications(payload.data.notifications);
                     }
                 } else if (payload.type === 'wallpaperUpdate') {
                     const wpEl = document.getElementById('remote-wallpaper');
                     if(wpEl) {
-                        // Ensure it is a proper URL or data URI
                         if(payload.data && (payload.data.startsWith('data:') || payload.data.startsWith('http') || payload.data.startsWith('blob:'))) {
                             wpEl.style.backgroundImage = `url('${payload.data}')`;
                         } else {
@@ -1562,7 +1555,6 @@
                         }
                     }
                 } else if (payload.type === 'notificationUpdate') {
-                     // Handle single notification push
                      renderRemoteNotifications(payload.data);
                 } else if (payload.type === 'liveActivityStart') {
                     renderLiveActivityIframe(payload.data);
@@ -1571,22 +1563,25 @@
                 }
             });
             
-            // Listen for Data Responses (Screenshots, App Lists)
-            getCmd((payload) => {
+            // Listen for Data Responses
+            getCmd((payload, peerId) => {
                 if (payload.type === 'welcome') {
-                    // Host sent updated device name
+                    console.log(`[Waves] Welcome received from ${peerId}`);
+                    
+                    // Mark peer as welcomed to stop retries
+                    if (peerHandshakeStatus[peerId]) {
+                        peerHandshakeStatus[peerId].welcomed = true;
+                    }
+
                     if (payload.deviceName) {
                         saveDevice(config, payload.deviceName);
-                        setStatus(true, payload.deviceName); // Update UI
+                        setStatus(true, payload.deviceName);
                     }
                     
-                    // Only request detailed data once we are officially welcomed.
-                    // This prevents race conditions where commands are sent before auth is registered.
-                    console.log("Welcome received. Requesting sync...");
+                    // Trigger state sync now that we are trusted
                     sendCommand('getState');
-                    setTimeout(() => sendCommand('getApps'), 500); // Stagger requests
+                    setTimeout(() => sendCommand('getApps'), 500);
                 } else if (payload.type === 'auth_failed') {
-                    // Handle rejection
                     if (payload.reason === 'profile_missing') {
                         alert("Connection rejected: You must set up your profile.");
                         showView('view-profile-setup');
@@ -1603,32 +1598,21 @@
                 } else if (payload.type === 'appList') {
                     appListData = payload.data;
                     renderAppList(payload.data);
-                    updateMiniAppPill(); // Refresh pill in case icon was missing
+                    updateMiniAppPill();
                 } else if (payload.type === 'wallpaperList') {
                     renderWallpaperList(payload.data);
                 } else if (payload.type === 'requestUpload') {
                     const { accept, multiple, requestId } = payload.data;
                     const modal = document.getElementById('upload-modal');
                     const input = document.getElementById('remote-file-input');
-                    
                     input.accept = accept || '*/*';
                     input.multiple = multiple || false;
-                    // Store requestId on input for retrieval during change event
                     input.dataset.requestId = requestId || '';
-                    
                     modal.classList.add('open');
                 } else if (payload.type === 'settingsData') {
-                    // Forward bulk data to Settings Iframe
                     const frame = document.getElementById('settings-frame');
                     if (frame.contentWindow) {
-                        // The settings app expects 'localStorageAllValues' for the list view
-                        // OR specific item updates. For the "Storage" view, it listens for 'localStorageAllValues'.
-                        // For general settings sync, it listens for 'localStorageItemValue'.
-                        
-                        // 1. Send as list (for storage view)
                         frame.contentWindow.postMessage({ type: 'localStorageAllValues', value: payload.data }, '*');
-                        
-                        // 2. Send as individual updates (to sync toggles/sliders)
                         payload.data.forEach(item => {
                             frame.contentWindow.postMessage({ 
                                 type: 'localStorageItemValue', 
@@ -1644,18 +1628,42 @@
                 const d = loadDevices().find(d => d.config.r === config.r);
                 setStatus(true, d ? d.name : "Connected");
                 
-                // 1. Send Hello/Handshake ONLY. Do not send commands yet.
-                // Commands sent before the host processes 'hello' will be dropped/ignored.
-                console.log("Peer found. Sending Hello...");
-                sendAction({ 
-                    type: 'hello', 
-                    auth: config.k,
-                    profile: userProfile 
-                }, peerId);
+                // Initialize status tracking
+                peerHandshakeStatus[peerId] = { welcomed: false, attempts: 0 };
+
+                // Handshake Loop
+                const attemptHandshake = () => {
+                    if (!peerHandshakeStatus[peerId] || peerHandshakeStatus[peerId].welcomed) return;
+                    
+                    if (peerHandshakeStatus[peerId].attempts > 5) {
+                        console.warn(`[Waves] Handshake timeout for ${peerId}. Switching to broadcast.`);
+                        // Last ditch effort: broadcast hello
+                        sendCommand('hello', { auth: config.k, profile: userProfile });
+                        return;
+                    }
+
+                    console.log(`[Waves] Sending Hello to ${peerId} (Attempt ${peerHandshakeStatus[peerId].attempts + 1})`);
+                    
+                    sendAction({ 
+                        type: 'hello', 
+                        auth: config.k,
+                        profile: userProfile 
+                    }, peerId);
+
+                    peerHandshakeStatus[peerId].attempts++;
+                    setTimeout(attemptHandshake, 1500);
+                };
+
+                attemptHandshake();
             });
 
-            room.onPeerJoin(() => setStatus(true));
-            room.onPeerLeave(() => setStatus(false));
+            room.onPeerLeave((peerId) => {
+                delete peerHandshakeStatus[peerId];
+                // Check if any peers remain
+                if (Object.keys(peerHandshakeStatus).length === 0) {
+                    setStatus(false);
+                }
+            });
         }
     
         function exitAppUI() {
@@ -2243,14 +2251,9 @@
         // --- Keep Alive & Visibility Logic ---
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
-                console.log("App foregrounded. Checking connection...");
-                // If we have a config, try to re-establish
                 if (currentConfig && currentConfig.k) {
                     if (room && sendAction) {
-                        // RE-HANDSHAKE: Send Hello again. 
-                        // If the host restarted or cleared peer memory while we were asleep, 
-                        // a simple 'ping' or 'getState' will fail authentication.
-                        // Re-sending hello re-registers us without a full page reload.
+                        // Re-trigger hello on wake to ensure host knows we are back
                         const peers = room.getPeers();
                         if (peers.length > 0) {
                             peers.forEach(peerId => {
@@ -2261,9 +2264,7 @@
                                 }, peerId);
                             });
                         } else {
-                            // No peers visible, might be disconnected at network layer
-                            console.log("No peers found. Reconnecting room...");
-                            connect(currentConfig);
+                            connect(currentConfig); // Reconnect if room empty
                         }
                     } else {
                         connect(currentConfig);
@@ -2275,10 +2276,9 @@
         // Heartbeat Loop
         setInterval(() => {
             if (sendAction && currentConfig && currentConfig.k) {
-                // Sending ping keeps NAT mappings alive
-                sendCommand('ping'); 
+                sendCommand('ping'); // Keeps NAT open
             }
-        }, 3000);
+        }, 3000); 
 
         // Run on load
         checkInitState();
