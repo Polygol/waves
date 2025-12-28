@@ -980,10 +980,60 @@
             document.getElementById('loading-toast').classList.remove('show');
         }
 
-        function showView(id) {
+        // --- Navigation Logic ---
+        
+        // Internal helper to switch visibility without history modification
+        function _renderView(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            const el = document.getElementById(id);
+            if(el) el.classList.add('active');
         }
+
+        // Main navigation function with History support
+        function showView(id) {
+            _renderView(id);
+            // Push state if different
+            const hash = '#' + id.replace('view-', '');
+            if (window.location.hash !== hash) {
+                history.pushState({ view: id }, '', hash);
+            }
+        }
+
+        // Handle Browser Back Button
+        window.addEventListener('popstate', (event) => {
+            const state = event.state;
+            
+            // 1. Close Overlays (Settings, Sheets, Modals)
+            const settingsUI = document.getElementById('settings-ui');
+            if (settingsUI && settingsUI.style.display !== 'none') {
+                _closeRemoteSettingsInternal();
+            }
+            
+            ['app-drawer-sheet', 'wallpaper-sheet', 'announce-sheet'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.classList.contains('open')) el.classList.remove('open');
+            });
+            
+            const uploadModal = document.getElementById('upload-modal');
+            if(uploadModal && uploadModal.classList.contains('open')) uploadModal.classList.remove('open');
+
+            const screenshotModal = document.getElementById('screenshot-view');
+            if(screenshotModal && screenshotModal.classList.contains('open')) screenshotModal.classList.remove('open');
+
+            // 2. Restore View based on state
+            if (state && state.view) {
+                _renderView(state.view);
+                
+                // Special Case: If user backs out of Remote View to Setup, 
+                // force a reload to ensure clean disconnection state.
+                if (state.view === 'view-setup' && currentConfig) {
+                    window.location.reload();
+                }
+            } else {
+                // Default fallback
+                _renderView('view-setup');
+            }
+        });
         
         function setStatus(connected, label = null) {
             const dot = document.getElementById('status-dot');
@@ -1122,6 +1172,7 @@
     
         // --- Settings Bridge ---
         function openRemoteSettings() {
+            history.pushState({ overlay: 'settings' }, '', '#settings');
             const frame = document.getElementById('settings-frame');
             const container = document.getElementById('settings-ui');
             document.getElementById('default-dashboard-ui').style.display = 'none';
@@ -1174,21 +1225,39 @@
         });
     
         function closeRemoteSettings() {
-            document.getElementById('settings-ui').style.display = 'none';
-            document.getElementById('default-dashboard-ui').style.display = 'block';
+            if (window.location.hash === '#settings') {
+                history.back();
+            } else {
+                document.getElementById('settings-ui').style.display = 'none';
+                document.getElementById('default-dashboard-ui').style.display = 'block';
+            }
         }
 
         function toggleAppDrawer() {
-            document.getElementById('app-drawer-sheet').classList.toggle('open');
+            const el = document.getElementById('app-drawer-sheet');
+            if (el.classList.contains('open')) {
+                // Close
+                if(window.location.hash === '#apps') history.back();
+                else el.classList.remove('open');
+            } else {
+                // Open
+                history.pushState({ overlay: 'apps' }, '', '#apps');
+                el.classList.add('open');
+            }
         }
 
         function openWallpapers() {
+            history.pushState({ overlay: 'wallpapers' }, '', '#wallpapers');
             document.getElementById('wallpaper-sheet').classList.add('open');
             sendCommand('getWallpapers');
         }
 
         function toggleWallpaperSheet() {
-            document.getElementById('wallpaper-sheet').classList.remove('open');
+            const el = document.getElementById('wallpaper-sheet');
+            if (el.classList.contains('open')) {
+                if(window.location.hash === '#wallpapers') history.back();
+                else el.classList.remove('open');
+            }
         }
 
         function toggleQS(id) {
@@ -1339,14 +1408,20 @@
         }
         
         function openAnnouncementSheet() {
+            history.pushState({ overlay: 'announce' }, '', '#announce');
             document.getElementById('announce-sheet').classList.add('open');
-            // Focus input after transition
             setTimeout(() => document.getElementById('announce-input').focus(), 300);
         }
         
         function toggleAnnouncementSheet() {
-            document.getElementById('announce-sheet').classList.remove('open');
-            document.getElementById('announce-input').blur();
+            const el = document.getElementById('announce-sheet');
+            if (el.classList.contains('open')) {
+                if(window.location.hash === '#announce') history.back();
+                else {
+                    el.classList.remove('open');
+                    document.getElementById('announce-input').blur();
+                }
+            }
         }
         
         function toggleAnnounceTTS() {
@@ -2241,10 +2316,12 @@
             const devices = loadDevices();
             if (devices.length > 0) {
                 renderDeviceList();
-                showView('view-setup'); // Ensure setup/list view is active
+                _renderView('view-setup');
+                history.replaceState({ view: 'view-setup' }, '', '#setup');
             } else {
                 showNewDeviceInput();
-                showView('view-setup');
+                _renderView('view-setup');
+                history.replaceState({ view: 'view-setup' }, '', '#setup');
             }
         }
 
