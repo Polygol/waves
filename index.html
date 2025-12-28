@@ -1004,11 +1004,6 @@
             const state = event.state;
             
             // 1. Close Overlays (Settings, Sheets, Modals)
-            const settingsUI = document.getElementById('settings-ui');
-            if (settingsUI && settingsUI.style.display !== 'none') {
-                _closeRemoteSettingsInternal();
-            }
-            
             ['app-drawer-sheet', 'wallpaper-sheet', 'announce-sheet'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el && el.classList.contains('open')) el.classList.remove('open');
