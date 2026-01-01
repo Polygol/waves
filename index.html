@@ -609,13 +609,13 @@
 
             <!-- New Device Input Container -->
             <div id="new-device-container" style="width: 100%;">
-                <p style="opacity: 0.7;">Open Settings > Connections > Show Code to start pairing</p>
-                <p style="opacity: 0.7; text-align:center;">Enter the code shown on the Display</p>
+                <p style="opacity: 0.7;">Open Settings > Connections > Show PIN to start pairing</p>
+                <p style="opacity: 0.7; text-align:center;">Enter the PIN shown on the Display</p>
                 
-                <input type="text" id="input-code" class="code-input" placeholder="ABCD1234" maxlength="8">
+                <input type="text" id="input-code" class="code-input" placeholder="••••••••" maxlength="8">
                 
                 <button class="btn-primary" id="btn-connect" style="margin-top:0;">
-                    Connect
+                    Pair
                 </button>
 
                 <button id="cancel-add-btn" class="icon-btn" style="margin-top: 20px; display: none; width: 100%; border-radius: 50px;" onclick="showDeviceList()">
@@ -2217,7 +2217,7 @@
             const code = document.getElementById('input-code').value.trim();
             // Allow code length of 8
             if (code.length < 8) {
-                alert("Please enter a valid 8-character code");
+                alert("Please enter a valid 8-character PIN");
                 return;
             }
             connect({ r: code });
