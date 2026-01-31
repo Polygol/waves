@@ -1815,12 +1815,19 @@
 
                 attemptHandshake();
             });
-
+            
             room.onPeerLeave((peerId) => {
                 delete peerHandshakeStatus[peerId];
                 // Check if any peers remain
                 if (Object.keys(peerHandshakeStatus).length === 0) {
                     setStatus(false);
+                    // Auto-reconnect logic: If host dropped, try to reconnect
+                    console.log("[Waves] Connection lost. Attempting reconnect...");
+                    setTimeout(() => {
+                        if (document.visibilityState === 'visible') {
+                            connect(currentConfig);
+                        }
+                    }, 2000);
                 }
             });
         }
