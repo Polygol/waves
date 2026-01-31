@@ -723,6 +723,10 @@
                     <span class="material-symbols-rounded" style="font-size: 32px;">airplay</span>
                     <span class="label-large">Preview</span>
                 </button>
+                <button class="action-card" onclick="startCasting()">
+                    <span class="material-symbols-rounded" style="font-size: 32px;">cast</span>
+                    <span class="label-large">Cast</span>
+                </button>
                  <button class="action-card" onclick="toggleAppDrawer()">
                     <span class="material-symbols-rounded" style="font-size: 32px;">grid_view</span>
                     <span class="label-large">Applications</span>
@@ -1445,6 +1449,33 @@
             // Cleanup
             document.getElementById('announce-input').value = "";
             toggleAnnouncementSheet();
+        }
+
+        function startCasting() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                alert("Screen casting is not supported on this device/browser.");
+                return;
+            }
+
+            navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
+                .then(stream => {
+                    if (room) {
+                        showLoading("Starting Cast...");
+                        room.addStream(stream);
+                        
+                        // Handle user stopping share via browser UI
+                        stream.getVideoTracks()[0].onended = () => {
+                            room.removeStream(stream);
+                            hideLoading();
+                        };
+                        
+                        // Auto-hide loading toast after a moment
+                        setTimeout(hideLoading, 3000);
+                    }
+                })
+                .catch(err => {
+                    console.warn("Cast cancelled or failed", err);
+                });
         }
 
         // --- Networking ---
