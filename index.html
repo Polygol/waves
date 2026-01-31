@@ -2415,27 +2415,31 @@
                 history.replaceState({ view: 'view-setup' }, '', '#setup');
             }
         }
-
+        
         // --- Keep Alive & Visibility Logic ---
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
+                console.log("[Waves] Wake detected. Verifying connection...");
                 if (currentConfig && currentConfig.k) {
-                    if (room && sendAction) {
-                        // Re-trigger hello on wake to ensure host knows we are back
-                        const peers = room.getPeers();
-                        if (peers.length > 0) {
-                            peers.forEach(peerId => {
+                    // Force a full reconnection if the room state is stale or peers are gone
+                    const peers = room ? room.getPeers() : [];
+                    
+                    if (!room || peers.length === 0) {
+                        console.log("[Waves] Connection stale. Performing full reconnect.");
+                        connect(currentConfig);
+                    } else {
+                        // If peers still exist, re-verify auth to ensure Host hasn't timed out
+                        peers.forEach(peerId => {
+                            if (sendAction) {
                                 sendAction({ 
                                     type: 'hello', 
                                     auth: currentConfig.k,
                                     profile: userProfile 
                                 }, peerId);
-                            });
-                        } else {
-                            connect(currentConfig); // Reconnect if room empty
-                        }
-                    } else {
-                        connect(currentConfig);
+                            }
+                        });
+                        // Request immediate state refresh
+                        setTimeout(() => sendCommand('getState'), 500);
                     }
                 }
             }
