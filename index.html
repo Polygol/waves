@@ -463,17 +463,15 @@
         .segment-btn {
             flex: 1;
             background: transparent;
-            border: none;
             padding: 10px;
-            border-radius: 50px;
             color: var(--md-sys-color-on-surface-variant);
             font-weight: 500;
             transition: background 0.2s, color 0.2s, border-radius 0.2s;
+            border-bottom: 2px solid transparent;
         }
         .segment-btn.active {
-            background: var(--md-sys-color-surface);
-            color: var(--md-sys-color-on-surface);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            border-bottom: 2px solid var(--md-sys-color-primary);
+            color: var(--md-sys-color-primary);
         }
 
         /* Widget Grid */
