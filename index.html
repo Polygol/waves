@@ -1741,7 +1741,7 @@
                 } else if (payload.type === 'liveActivityUpdate') {
                     const iframe = document.querySelector('#remote-live-activity-container iframe');
                     if (iframe && iframe.contentWindow) {
-                        iframe.contentWindow.postMessage({ type: 'update', ...payload.data }, '*');
+                        iframe.contentWindow.postMessage({ type: 'live-activity-update', ...payload.data }, '*');
                     }
                 } else if (payload.type === 'liveActivityStop') {
                     const container = document.getElementById('remote-live-activity-container');
