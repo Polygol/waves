@@ -499,10 +499,10 @@
             border: none;
             border-radius: 20px;
             margin-bottom: 12px;
-            background: #000;
+            background: var(--md-sys-color-surface);
             overflow: hidden;
         }
-
+        
         #remote-wallpaper {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -885,6 +885,7 @@
         let userProfile = null; // { name, avatar }
         let announceTTS = true; // Default state
         let activeStream = null; // Track casting state
+        let lastSystemContext = null; // Cache for new iframes
 
         function loadUserProfile() {
             const raw = localStorage.getItem('waves_user_profile');
@@ -1079,13 +1080,24 @@
             if (context.reduceMotion) body.classList.add('reduce-animations');
             else body.classList.remove('reduce-animations');
             
-            // Update iframe theme if open
+            const msgTheme = { type: 'themeUpdate', theme: context.theme };
+            const msgContrast = { type: 'contrastUpdate', enabled: context.highContrast };
+            const msgMotion = { type: 'animationsUpdate', enabled: !context.reduceMotion };
+
+            // Update Settings Frame
             const frame = document.getElementById('settings-frame');
             if (frame && frame.contentWindow) {
-                frame.contentWindow.postMessage({ 
-                    type: 'themeUpdate', 
-                    theme: context.theme 
-                }, '*');
+                frame.contentWindow.postMessage(msgTheme, '*');
+                frame.contentWindow.postMessage(msgContrast, '*');
+                frame.contentWindow.postMessage(msgMotion, '*');
+            }
+
+            // Update Live Activity Frame
+            const activityFrame = document.querySelector('#remote-live-activity-container iframe');
+            if (activityFrame && activityFrame.contentWindow) {
+                activityFrame.contentWindow.postMessage(msgTheme, '*');
+                activityFrame.contentWindow.postMessage(msgContrast, '*');
+                activityFrame.contentWindow.postMessage(msgMotion, '*');
             }
         }
         
@@ -1191,6 +1203,17 @@
 
         // Bridge Logic: Listen for messages from the Settings Iframe
         window.addEventListener('message', (event) => {
+            // 1. Live Activity Bridge
+            const activityFrame = document.querySelector('#remote-live-activity-container iframe');
+            if (activityFrame && event.source === activityFrame.contentWindow) {
+                sendCommand('liveActivityMessage', {
+                    activityId: activityFrame.dataset.activityId,
+                    message: event.data
+                });
+                return;
+            }
+
+            // 2. Settings Bridge
             const frame = document.getElementById('settings-frame');
             if (event.source !== frame.contentWindow) return;
     
@@ -1715,6 +1738,14 @@
                      renderRemoteNotifications(payload.data);
                 } else if (payload.type === 'liveActivityStart') {
                     renderLiveActivityIframe(payload.data);
+                } else if (payload.type === 'liveActivityUpdate') {
+                    const iframe = document.querySelector('#remote-live-activity-container iframe');
+                    if (iframe && iframe.contentWindow) {
+                        iframe.contentWindow.postMessage({ type: 'live-activity-update', ...payload.data }, '*');
+                    }
+                } else if (payload.type === 'liveActivityStop') {
+                    const container = document.getElementById('remote-live-activity-container');
+                    if(container) container.innerHTML = '';
                 } else if (payload.type === 'widgetUpdate') {
                     renderWidgetPreviews(payload.data);
                 }
@@ -2077,7 +2108,7 @@
                 sendCommand('getApps'); // Fetch if missing
             }
         }
-
+        
         function renderLiveActivityIframe(data) {
             const container = document.getElementById('remote-live-activity-container');
             container.innerHTML = ''; // Clear previous
@@ -2087,7 +2118,14 @@
             iframe.src = data.url;
             iframe.className = 'remote-activity-frame';
             iframe.style.height = data.height || '120px';
+            iframe.dataset.activityId = data.activityId;
             container.appendChild(iframe);
+            
+            // Apply current system context immediately to new iframe
+            if (lastSystemContext) {
+                // Small delay to allow iframe to initialize listener
+                setTimeout(() => applySystemContext(lastSystemContext), 200);
+            }
         }
 
         function renderWidgetPreviews(widgets) {
