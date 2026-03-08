@@ -795,6 +795,15 @@
         </div>
     </div>
 
+    <!-- Context Menu Sheet -->
+    <div id="context-menu-sheet" class="app-drawer-sheet" style="z-index: 300;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
+            <h2 id="cm-title" style="margin:0; font-size:18px; font-weight:500;">Options</h2>
+            <button class="icon-btn" onclick="closeRemoteContextMenu()"><span class="material-symbols-rounded">close</span></button>
+        </div>
+        <div id="cm-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+
     <!-- Announcement Sheet -->
     <div id="announce-sheet" class="app-drawer-sheet">
         <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
@@ -1013,7 +1022,7 @@
             const state = event.state;
             
             // 1. Close Overlays (Settings, Sheets, Modals)
-            ['app-drawer-sheet', 'wallpaper-sheet', 'announce-sheet'].forEach(id => {
+            ['app-drawer-sheet', 'wallpaper-sheet', 'announce-sheet', 'context-menu-sheet'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el && el.classList.contains('open')) el.classList.remove('open');
             });
@@ -1861,6 +1870,35 @@
             });
         }
     
+        function showRemoteContextMenu(title, options, callback) {
+            document.getElementById('cm-title').innerText = title;
+            const list = document.getElementById('cm-list');
+            list.innerHTML = '';
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'filled-card';
+                btn.style.border = 'none';
+                btn.style.cursor = 'pointer';
+                btn.style.justifyContent = 'flex-start';
+                btn.innerHTML = `<span class="material-symbols-rounded">${opt.icon || 'star'}</span> <span style="font-size:16px; font-weight:500;">${opt.label}</span>`;
+                btn.onclick = () => {
+                    closeRemoteContextMenu();
+                    callback(opt.id);
+                };
+                list.appendChild(btn);
+            });
+            document.getElementById('context-menu-sheet').classList.add('open');
+            history.pushState({ overlay: 'context' }, '', '#context');
+        }
+
+        function closeRemoteContextMenu() {
+            const el = document.getElementById('context-menu-sheet');
+            if (el.classList.contains('open')) {
+                if(window.location.hash === '#context') history.back();
+                else el.classList.remove('open');
+            }
+        }
+
         function exitAppUI() {
             document.getElementById('app-specific-ui').style.display = 'none';
             document.getElementById('default-dashboard-ui').style.display = 'block';
@@ -2035,26 +2073,141 @@
                     el.style.display = 'flex';
                     el.style.flexDirection = 'column';
                     el.style.gap = '8px';
+                    el.style.position = 'relative';
 
-                    comp.items.forEach(item => {
+                    comp.items.forEach((item, index) => {
                         const itemEl = document.createElement('div');
                         itemEl.className = 'filled-card'; 
                         itemEl.style.marginBottom = '0';
                         itemEl.style.cursor = 'pointer';
-                        itemEl.onclick = () => sendAppAction(item.id);
+                        itemEl.dataset.origIndex = index;
+                        itemEl.onclick = (e) => {
+                            if (!e.target.closest('.drag-handle')) sendAppAction(item.id);
+                        };
 
                         let imgHtml = '';
                         if (item.image) {
-                            imgHtml = `<img src="${item.image}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">`;
+                            imgHtml = `<img src="${item.image}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; pointer-events: none;">`;
                         }
 
                         itemEl.innerHTML = `
                             ${imgHtml}
-                            <div style="flex: 1; min-width: 0;">
+                            <div style="flex: 1; min-width: 0; pointer-events: none;">
                                 <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 16px;">${item.title}</div>
                                 ${item.subtitle ? `<div style="font-size: 13px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.subtitle}</div>` : ''}
                             </div>
                         `;
+                        
+                        // Sorting / Drag to Reorder Support
+                        if (comp.sortable) {
+                            const handle = document.createElement('span');
+                            handle.className = 'material-symbols-rounded drag-handle';
+                            handle.innerText = 'drag_handle';
+                            handle.style.opacity = '0.5';
+                            handle.style.padding = '8px';
+                            handle.style.cursor = 'grab';
+                            handle.style.touchAction = 'none';
+                            itemEl.prepend(handle);
+
+                            let dragGhost = null;
+                            
+                            handle.addEventListener('touchstart', (e) => {
+                                e.preventDefault();
+                                if (navigator.vibrate) navigator.vibrate(50);
+                                itemEl.style.opacity = '0.4';
+                                
+                                dragGhost = itemEl.cloneNode(true);
+                                dragGhost.style.position = 'fixed';
+                                dragGhost.style.zIndex = '9999';
+                                dragGhost.style.pointerEvents = 'none';
+                                dragGhost.style.opacity = '0.9';
+                                dragGhost.style.width = `${itemEl.offsetWidth}px`;
+                                dragGhost.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)';
+                                
+                                const rect = itemEl.getBoundingClientRect();
+                                dragGhost.style.top = `${rect.top}px`;
+                                dragGhost.style.left = `${rect.left}px`;
+                                document.body.appendChild(dragGhost);
+                            }, {passive: false});
+
+                            handle.addEventListener('touchmove', (e) => {
+                                if (!dragGhost) return;
+                                e.preventDefault();
+                                const touch = e.touches[0];
+                                dragGhost.style.top = `${touch.clientY - dragGhost.offsetHeight/2}px`;
+                                dragGhost.style.left = `${touch.clientX - dragGhost.offsetWidth/2}px`;
+                                
+                                const allItems =[...el.querySelectorAll('.filled-card')];
+                                const hoverEl = allItems.find(sibling => {
+                                    if (sibling === itemEl) return false;
+                                    const box = sibling.getBoundingClientRect();
+                                    return touch.clientY > box.top && touch.clientY < box.bottom;
+                                });
+                                
+                                if (hoverEl) {
+                                    const box = hoverEl.getBoundingClientRect();
+                                    if (touch.clientY < box.top + box.height/2) el.insertBefore(itemEl, hoverEl);
+                                    else el.insertBefore(itemEl, hoverEl.nextSibling);
+                                }
+                            }, {passive: false});
+
+                            const endDrag = () => {
+                                if (!dragGhost) return;
+                                itemEl.style.opacity = '1';
+                                dragGhost.remove();
+                                dragGhost = null;
+                                
+                                const allItems = [...el.querySelectorAll('.filled-card')];
+                                const newIndex = allItems.indexOf(itemEl);
+                                if (newIndex !== index) {
+                                    sendAppAction(comp.id, { type: 'reorder', from: index, to: newIndex });
+                                    // Soft-update dataset indices immediately to avoid glitchy consecutive draggings
+                                    allItems.forEach((element, idx) => element.dataset.origIndex = idx);
+                                }
+                            };
+
+                            handle.addEventListener('touchend', endDrag);
+                            handle.addEventListener('touchcancel', endDrag);
+                        }
+                        
+                        // Context Menu Support via Long Press
+                        if (item.contextMenu && item.contextMenu.length > 0) {
+                            let pressTimer;
+                            let isDrag = false;
+                            
+                            itemEl.addEventListener('touchstart', (e) => {
+                                if (e.target.closest('.drag-handle')) return;
+                                isDrag = false;
+                                pressTimer = setTimeout(() => {
+                                    if(!isDrag) {
+                                        if (navigator.vibrate) navigator.vibrate(50);
+                                        showRemoteContextMenu(item.title, item.contextMenu, (actionId) => {
+                                            sendAppAction(comp.id, { type: 'context', itemId: item.id, actionId: actionId });
+                                        });
+                                    }
+                                }, 500);
+                            }, {passive: true});
+                            
+                            itemEl.addEventListener('touchmove', () => { isDrag = true; clearTimeout(pressTimer); }, {passive: true});
+                            itemEl.addEventListener('touchend', () => clearTimeout(pressTimer));
+                            itemEl.addEventListener('touchcancel', () => clearTimeout(pressTimer));
+                            
+                            itemEl.addEventListener('mousedown', (e) => {
+                                if (e.target.closest('.drag-handle')) return;
+                                isDrag = false;
+                                pressTimer = setTimeout(() => {
+                                    if(!isDrag) {
+                                        showRemoteContextMenu(item.title, item.contextMenu, (actionId) => {
+                                            sendAppAction(comp.id, { type: 'context', itemId: item.id, actionId: actionId });
+                                        });
+                                    }
+                                }, 500);
+                            });
+                            itemEl.addEventListener('mousemove', () => { isDrag = true; clearTimeout(pressTimer); });
+                            itemEl.addEventListener('mouseup', () => clearTimeout(pressTimer));
+                            itemEl.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+                        }
+
                         el.appendChild(itemEl);
                     });
                 }
