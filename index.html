@@ -686,6 +686,11 @@
                 <input type="range" id="remote-temperature" min="-10" max="10" step="1" value="0" onchange="sendCommand('setTemperature', this.value)">
             </div>
 
+            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px; background: var(--md-sys-color-primary-container);">
+                <span class="material-symbols-rounded">volume_up</span>
+                <input type="range" id="remote-volume" min="0" max="100" step="1" value="100" oninput="sendCommand('setVolume', this.value)">
+            </div>
+
             <!-- Quick Settings -->
             <div class="qs-grid">
                 <button class="qs-btn" id="qs-silent" onclick="toggleQS('silent')">
@@ -1715,6 +1720,10 @@
                     const tempSlider = document.getElementById('remote-temperature');
                     if(tempSlider && payload.data.temperature !== undefined) {
                         tempSlider.value = payload.data.temperature;
+                    }
+                    const volSlider = document.getElementById('remote-volume');
+                    if(volSlider && payload.data.volume !== undefined) {
+                        volSlider.value = payload.data.volume;
                     }
                     if(payload.data.media) {
                         updateMediaUI(payload.data.media, payload.data.mediaState);
