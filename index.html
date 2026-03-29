@@ -1149,21 +1149,6 @@
             <!-- Live Activity Container -->
             <div id="remote-live-activity-container"></div>
 
-            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px; background: var(--search-background);">
-                <span class="material-symbols-rounded">sunny</span>
-                <input type="range" id="remote-brightness" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
-            </div>
-
-            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px; background: var(--search-background);">
-                <span class="material-symbols-rounded">thermometer</span>
-                <input type="range" id="remote-temperature" min="-10" max="10" step="1" value="0" onchange="sendCommand('setTemperature', this.value)">
-            </div>
-
-            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px; background: var(--search-background);">
-                <span class="material-symbols-rounded">volume_up</span>
-                <input type="range" id="remote-volume" min="0" max="100" step="1" value="100" oninput="sendCommand('setVolume', this.value)">
-            </div>
-
             <!-- Quick Settings -->
             <div class="qs-grid">
                 <button class="qs-btn" id="qs-silent" onclick="toggleQS('silent')">
@@ -1178,6 +1163,21 @@
                 <button class="qs-btn" id="qs-theme" onclick="toggleQS('theme')">
                     <span class="material-symbols-rounded">radio_button_partial</span>
                 </button>
+            </div>
+
+            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px; background: var(--search-background);">
+                <span class="material-symbols-rounded">sunny</span>
+                <input type="range" id="remote-brightness" min="20" max="100" onchange="sendCommand('setBrightness', this.value)">
+            </div>
+
+            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px; background: var(--search-background);">
+                <span class="material-symbols-rounded">thermometer</span>
+                <input type="range" id="remote-temperature" min="-10" max="10" step="1" value="0" onchange="sendCommand('setTemperature', this.value)">
+            </div>
+
+            <div class="slider-container" style="margin-top: 0; margin-bottom: 12px; background: var(--search-background);">
+                <span class="material-symbols-rounded">volume_up</span>
+                <input type="range" id="remote-volume" min="0" max="100" step="1" value="100" oninput="sendCommand('setVolume', this.value)">
             </div>
 
             <!-- Media Player -->
