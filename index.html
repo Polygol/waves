@@ -884,6 +884,23 @@
             z-index: 1000;
         }
         .loading-toast.show { opacity: 1; }
+        #full-loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--background-color);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        #full-loading-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
         .mini-app-pill {
             background: var(--search-background);
             backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(5px);
@@ -1044,7 +1061,15 @@
     <div id="remote-wallpaper"></div>
     
     <!-- Loading Toast -->
-    <div id="loading-toast" class="loading-toast">Loading</div>
+    <div id="loading-toast" class="loading-toast"><svg class="loading-spinner" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="currentColor" stroke="none" class="loading-spinner-ind" /></svg></div>
+
+    <!-- Full Loading Overlay -->
+    <div id="full-loading-overlay">
+        <svg class="loading-spinner" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width: 72px; height: 72px;">
+            <rect width="100%" height="100%" fill="var(--accent)" stroke="none" class="loading-spinner-ind" />
+        </svg>
+        <p style="margin-top: 24px; font-weight: 500; font-size: 18px; color: var(--text-color);">Connecting</p>
+    </div>
 
     <!-- PROFILE SETUP VIEW -->
     <div id="view-profile-setup" class="view">
@@ -1272,7 +1297,7 @@
             <button class="icon-btn" onclick="toggleWallpaperSheet()"><span class="material-symbols-rounded">close</span></button>
         </div>
         <div id="wallpaper-list-container" class="wallpaper-grid">
-            <p>Loading</p>
+            <p><svg class="loading-spinner" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width: 72px; height: 72px;"><rect width="100%" height="100%" fill="var(--accent)" stroke="none" class="loading-spinner-ind" /></svg></p>
         </div>
     </div>
 
@@ -1320,6 +1345,7 @@
     <div id="screenshot-view" class="screenshot-modal">
         <button onclick="this.parentElement.classList.remove('open')"><span class="material-symbols-rounded">close</span></button>
         <img id="screenshot-img" src="">
+        <svg id="screenshot-loading" class="loading-spinner" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width: 72px; height: 72px;"><rect width="100%" height="100%" fill="var(--accent)" stroke="none" class="loading-spinner-ind" /></svg>
     </div>
 
     <!-- Upload Modal -->
@@ -1477,6 +1503,16 @@
 
         function hideLoading() {
             document.getElementById('loading-toast').classList.remove('show');
+        }
+
+        function showFullLoading() {
+            const overlay = document.getElementById('full-loading-overlay');
+            if (overlay) overlay.classList.add('show');
+        }
+
+        function hideFullLoading() {
+            const overlay = document.getElementById('full-loading-overlay');
+            if (overlay) overlay.classList.remove('show');
         }
 
         // --- Navigation Logic ---
@@ -2030,7 +2066,7 @@
                     }
 
                     if (room) {
-                        showLoading("Starting Cast...");
+                        showLoading("Starting Cast");
                         room.addStream(stream);
                         activeStream = stream;
                         
@@ -2144,6 +2180,7 @@
         function startRemoteSession(config) {
             currentConfig = config;
             showView('view-remote');
+            showFullLoading();
 
             // Find device name for UI header
             const devices = loadDevices();
@@ -2264,6 +2301,7 @@
             getCmd((payload, peerId) => {
                 if (payload.type === 'welcome') {
                     console.log(`[Waves] Welcome received from ${peerId}`);
+                    hideFullLoading();
                     
                     // Mark peer as welcomed to stop retries
                     if (peerHandshakeStatus[peerId]) {
@@ -2279,6 +2317,7 @@
                     sendCommand('getState');
                     setTimeout(() => sendCommand('getApps'), 500);
                 } else if (payload.type === 'auth_failed') {
+                    hideFullLoading();
                     if (payload.reason === 'profile_missing') {
                         alert("Connection rejected: You must set up your profile.");
                         showView('view-profile-setup');
@@ -2290,8 +2329,9 @@
                     const modalImg = document.getElementById('screenshot-img');
                     if(modalImg) {
                         modalImg.src = payload.data;
-                        document.getElementById('screenshot-view').classList.add('open');
                     }
+                    const loading = document.getElementById('screenshot-loading');
+                    loading.style.display = 'none';
                 } else if (payload.type === 'appList') {
                     appListData = payload.data;
                     renderAppList(payload.data);
@@ -2359,6 +2399,7 @@
                 // Check if any peers remain
                 if (Object.keys(peerHandshakeStatus).length === 0) {
                     setStatus(false);
+                    hideFullLoading();
                     // Auto-reconnect logic: If host dropped, try to reconnect
                     console.log("[Waves] Connection lost. Attempting reconnect...");
                     setTimeout(() => {
@@ -2849,8 +2890,11 @@
         }
 
         function requestScreenshot() {
-            const img = document.getElementById('remote-screen-img');
-            if(img) img.style.opacity = '0.5'; // Visual feedback
+            document.getElementById('screenshot-view').classList.add('open');
+            const loading = document.getElementById('screenshot-loading');
+            loading.style.display = '';
+            const img = document.getElementById('screenshot-img');
+            if(img) img.src = '' // Visual feedback
             sendCommand('requestScreenshot');
         }
         
