@@ -116,7 +116,7 @@
             --accent: var(--accent-dark);
             --tonal: var(--tonal-dark);
 
-            --edge-refraction-filter: blur(10px) opacity(0.9);
+            --edge-refraction-filter: grayscale(0);
             --sun-shadow: 0 0 0 0 transparent;
             --sun-shadow-strong: 0 0 0 0 transparent;
 
@@ -129,6 +129,12 @@
             
             --border-radius-lg: 50px;
             --border-radius-md: 35px;
+        }
+
+        @supports (corner-shape: superellipse(1.5)) {
+            :root {
+                --edge-refraction-filter: blur(10px) opacity(0.9) !important;
+            }
         }
 
         body.light-theme {
